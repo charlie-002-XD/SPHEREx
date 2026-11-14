@@ -47,3 +47,6 @@ origin = https://github.com/Luis000923/SPHEREx.git, added as a local git config 
 
 ## D-016 (2026-11-14) Visual review of mock UI (PM)
 Checked ?mock=1 in Chrome at 375, 768 and 1440 px: no horizontal overflow, image is the hero, controls collapse into a bottom sheet on mobile and a side panel from 640 px, all touch targets >= 44 px at 375 px. Minor: segmented mode/detector buttons are 40 px tall at >= 640 px (below the 44 px rule); fix in polish if time allows. Mobile order is image, transport, search, sheet handle (acceptable, thumb-friendly). Not yet reviewed with real data or the spectrum panel open.
+
+## D-017 (2026-11-14) Opus 5.5 agent for complex tasks
+New agent spherex-complex-engineer (model claude-opus-5-5, plugin agents/ and repo .claude/agents/). Delegation criteria and commands are in the wave-orchestration skill. Devin stays the default for routine tasks. Branches opus/<id>, worktree .devin-worktrees/<id>-opus, commit trailer 'Generated-by: Claude Opus 5.5 (SI-assisted)'. First delegations: real-data integration and any gate that fails twice. Source: user instruction 2026-11-14.
