@@ -1,0 +1,524 @@
+/* App shell layout, target menu, panel/bottom-sheet, full-area states and
+   the token bridge that remaps f1's hardcoded colors inside .app so the
+   whole UI follows tokens.css in both color schemes. Mobile-first: the
+   desktop (>= 640px) rules live in the media query at the bottom. */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+}
+
+/* ---------- header ---------- */
+
+.app-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--header-h);
+  padding-inline: var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.app-title {
+  font-size: var(--text-lg);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+/* ---------- target preset menu ---------- */
+
+.tmenu {
+  position: relative;
+}
+
+.tmenu-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--target);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--bg);
+  color: var(--fg-dim);
+  font-size: var(--text-sm);
+  user-select: none;
+}
+.tmenu-summary:hover {
+  color: var(--fg);
+  background: var(--bg-hover);
+}
+.tmenu[open] > .tmenu-summary {
+  color: var(--fg);
+  border-color: var(--accent);
+}
+.tmenu-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.tmenu-list {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  z-index: 30;
+  min-width: 15rem;
+  max-width: calc(100vw - 2 * var(--space-4));
+  max-height: 60dvh;
+  overflow-y: auto;
+  padding: var(--space-1);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow);
+}
+
+.tmenu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-height: var(--target);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--radius-s);
+  color: var(--fg);
+  font-size: var(--text-sm);
+}
+.tmenu-item:hover {
+  background: var(--bg-hover);
+}
+.tmenu-name {
+  font-weight: 600;
+}
+.tmenu-coords {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--fg-dim);
+}
+
+/* ---------- body: viewer + search + panel ---------- */
+
+.app-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.app-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Mobile visual order: image on top, search row under it. DOM order stays
+   search-first, which keeps the keyboard order matching the task flow. */
+.app-main {
+  order: -1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+}
+
+.app-search {
+  flex: none;
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- secondary-controls panel (mobile bottom sheet) ---------- */
+
+.app-panel {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: var(--target);
+  border-top: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.app-panel-toggle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--target);
+  padding: 0 var(--space-4);
+  background: none;
+  border: none;
+  color: var(--fg-dim);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.app-panel-toggle:hover {
+  color: var(--fg);
+  background: var(--bg-hover);
+}
+.app-panel-toggle-label {
+  white-space: nowrap;
+}
+
+/* Grab-handle pill (mobile) / rail bar (desktop collapsed). */
+.app-panel-grip {
+  flex: none;
+  width: 2rem;
+  height: 0.25rem;
+  border-radius: var(--radius-pill);
+  background: var(--fg-faint);
+}
+
+.app-chev {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  transition: transform var(--dur-1) var(--ease);
+  /* closed on mobile: point up = sheet opens upward */
+  transform: rotate(-90deg);
+}
+.app-panel-toggle[aria-expanded="true"] .app-chev {
+  transform: rotate(90deg);
+}
+
+.app-panel-body {
+  overflow-y: auto;
+  max-height: 55dvh;
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.app-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.app-group-title {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-faint);
+}
+.app-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.app-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1 1 8rem;
+  font-size: var(--text-sm);
+  color: var(--fg-dim);
+}
+.app-field select {
+  min-height: var(--target);
+  padding: 0 var(--space-3);
+  color: var(--fg);
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+}
+
+.app-status {
+  flex: none;
+  font-size: var(--text-xs);
+  color: var(--fg-dim);
+}
+
+/* ---------- full-area states (empty / loading / error) ---------- */
+
+.state,
+.state-loading {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.state {
+  padding: var(--space-5);
+  text-align: center;
+  background: var(--bg-inset);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-m);
+}
+.state-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 26rem;
+}
+.state-icon {
+  width: 3rem;
+  height: 3rem;
+  color: var(--fg-faint);
+}
+.state-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+.state-hint {
+  font-size: var(--text-sm);
+  color: var(--fg-dim);
+}
+.state-error {
+  border-style: solid;
+  border-color: var(--danger);
+}
+.state-error .state-icon,
+.state-error .state-title {
+  color: var(--danger);
+}
+.state-retry {
+  min-height: var(--target);
+  padding: 0 var(--space-5);
+  border: none;
+  border-radius: var(--radius-s);
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 650;
+}
+.state-retry:hover {
+  filter: brightness(1.1);
+}
+
+.state-loading {
+  padding: 0;
+}
+.skel {
+  flex: 1;
+  height: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background:
+    linear-gradient(
+      100deg,
+      var(--bg-inset) 40%,
+      var(--bg-raised) 50%,
+      var(--bg-inset) 60%
+    ),
+    var(--bg-inset);
+  background-size: 200% 100%, 100% 100%;
+  animation: skel-scan 1.4s linear infinite;
+}
+@keyframes skel-scan {
+  to {
+    background-position: -200% 0, 0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel {
+    animation: none;
+  }
+}
+
+/* ---------- embed mode: viewer only, fills the iframe ---------- */
+
+.app-embed {
+  overflow: hidden;
+}
+.app-embed .app-main {
+  order: 0;
+  padding: 0;
+}
+
+/* ---------- token bridge for f1 components (viewer, controls) ---------- */
+
+.app .tl-viewer {
+  height: 100%;
+  min-height: 0;
+  gap: var(--space-2);
+  color: var(--fg);
+}
+.app .tl-stage {
+  flex: 1;
+  min-height: 0;
+  aspect-ratio: auto; /* fill .app-main; aspect kept by object-fit below */
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+}
+.app .tl-canvas {
+  object-fit: contain; /* letterbox instead of stretching the cutout */
+}
+.app .tl-overlay {
+  background: var(--overlay);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+.app .tl-flag {
+  color: var(--warn);
+}
+.app .tl-empty {
+  color: var(--fg-faint);
+}
+.app .tl-transport {
+  gap: var(--space-2);
+}
+.app .tl-transport button {
+  min-width: var(--target);
+  height: var(--target);
+  padding: 0 var(--space-3);
+  color: var(--fg);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+}
+.app .tl-transport button:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+.app .tl-transport button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.app .tl-scrubber {
+  min-height: var(--target);
+}
+.app .tl-fps-label {
+  font-family: var(--font-mono);
+  color: var(--fg-dim);
+}
+
+/* Coordinate search bar */
+.app .csb {
+  color: var(--fg);
+  font-size: var(--text-sm);
+}
+.app .csb-row {
+  gap: var(--space-2);
+}
+.app .csb-field {
+  flex: 1 1 9rem;
+  min-width: 7rem;
+}
+.app .csb-field span {
+  color: var(--fg-dim);
+}
+.app .csb-field input[type="text"] {
+  height: var(--target);
+  padding: 0 var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--fg);
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+}
+.app .csb-field input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.app .csb-fov input[type="range"] {
+  height: var(--target);
+}
+.app .csb-go {
+  height: var(--target);
+  padding: 0 var(--space-5);
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-radius: var(--radius-s);
+  font-weight: 650;
+}
+.app .csb-error {
+  color: var(--danger);
+}
+/* Presets live in the header target menu; hide the duplicate pill row. */
+.app .csb-presets {
+  display: none;
+}
+
+/* Mode / detector selector */
+.app .ms-group {
+  flex-wrap: wrap; /* the 320px panel is too narrow for All + D1-D6 inline */
+  background: var(--bg-inset);
+  border-color: var(--border);
+}
+.app .ms-opt {
+  min-height: calc(var(--target) - var(--space-1));
+  min-width: var(--target);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--fg-dim);
+}
+.app .ms-opt:hover {
+  color: var(--fg);
+}
+.app .ms-on {
+  color: var(--fg);
+  background: var(--accent-soft);
+}
+
+/* ---------- tablet / desktop (>= 640px) ---------- */
+
+@media (min-width: 640px) {
+  .app-body {
+    flex-direction: row;
+  }
+  .app-main {
+    order: 0; /* DOM order: search above the image on wide screens */
+  }
+  .app-search {
+    border-top: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .app-panel {
+    width: var(--panel-w);
+    border-top: none;
+    border-left: 1px solid var(--border);
+  }
+  .app-panel-body {
+    flex: 1;
+    max-height: none;
+    padding-top: var(--space-3);
+  }
+
+  /* Collapsed: slim vertical rail with a rotated label. */
+  .app-panel-closed {
+    width: var(--rail-w);
+    min-width: var(--rail-w);
+  }
+  .app-panel-closed .app-panel-toggle {
+    flex-direction: column;
+    height: 100%;
+    padding: var(--space-3) 0;
+  }
+  .app-panel-closed .app-panel-toggle-label {
+    writing-mode: vertical-rl;
+  }
+  .app-panel-closed .app-panel-grip {
+    width: 0.25rem;
+    height: 2rem;
+  }
+
+  /* Closed on desktop: point left = panel opens to the left. */
+  .app-panel-toggle .app-chev {
+    transform: rotate(180deg);
+  }
+  .app-panel-toggle[aria-expanded="true"] .app-chev {
+    transform: none;
+  }
+}
