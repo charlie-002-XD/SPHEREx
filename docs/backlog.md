@@ -15,7 +15,8 @@
 | f6-visual-polish | Elegant minimalist visual pass (design expert agent) | Opus 5.5 designer | f5 | running |
 | integration-live | Real-data end to end, numbers, screenshots (Opus agent) | Opus 5.5 | b5, f5 | running |
 | f4-layout-design | Minimalist responsive app shell, tokens, embed mode | Devin | f1 | merged |
-| f3-e2e-tests | Playwright | Devin | integration | todo |
+| f3-e2e-tests | Playwright (mock-mode first) | Devin | f5 | running |
+| b6-security-tests | Fuzz + security + robustness tests (tests only) | Devin | b5 | running |
 | deploy | Dockerfile, CI, hosting, warm-up, FortiGuard | Claude | integration | todo |
 | submission-docs | README, project-page text, slides, video script, checklist | Devin | - | merged (drafts; SI field to fix) |
 | submission | README, SI_USAGE, REFERENCES, demo (<=30 s / <=7 slides), submit | all | deploy | todo |
