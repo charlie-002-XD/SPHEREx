@@ -1,8 +1,17 @@
-// Composition root: wires URL state, the f1 viewer/controls and the API
-// client into the app shell. apiBase is injected and defaults to "" so
-// requests hit the backend's /api/v1 routes on the same origin (the client
-// in lib/api.ts appends /api/v1 itself).
-import { useCallback, useEffect, useState } from "react";
+// Composition root: wires URL state, the f1 viewer/controls, the f2
+// spectrum/metadata/overlay components and the API client into the f4 app
+// shell. apiBase is injected and defaults to "" so requests hit the
+// backend's /api/v1 routes on the same origin (the client in lib/api.ts
+// appends /api/v1 itself). ?mock=1 swaps every wire payload for the
+// synthetic mocks so the full UI runs with no backend (demos, e2e tests).
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { AppShell } from "./components/layout/AppShell";
 import type { MenuTarget } from "./components/layout/TargetMenu";
 import {
@@ -19,10 +28,27 @@ import {
   TimeLapseCanvas,
   type TransportState,
 } from "./components/viewer/TimeLapseCanvas";
+import { SpectrumPanel } from "./components/spectrum/SpectrumPanel";
+import {
+  canvasClickToSpectrum,
+  useSpectrum,
+} from "./components/spectrum/useSpectrum";
+import {
+  createSpectrumClient,
+  type SpectrumClient,
+} from "./components/spectrum/spectrumApi";
+import { makeMockSpectrum } from "./components/spectrum/mockSpectrum";
+import { FrameMetadata } from "./components/metadata/FrameMetadata";
 import { useUrlState } from "./hooks/useUrlState";
-import { useFrames, type FramesStatus } from "./hooks/useFrames";
+import { useFrames, type FramesResult } from "./hooks/useFrames";
 import { fetchTargets } from "./lib/api";
-import { formatDecDeg, formatRaDeg } from "./lib/coords";
+import {
+  formatDecDeg,
+  formatRaDeg,
+  parseDecToDeg,
+  parseRaToDeg,
+} from "./lib/coords";
+import { makeMockFramesResponse } from "./lib/mock";
 import { PRESET_TARGETS } from "./lib/presets";
 import { isStretchKind, STRETCH_KINDS } from "./lib/stretch";
 import { COLORMAP_NAMES, isColormapName } from "./lib/colormaps";
@@ -30,6 +56,30 @@ import type { FramesResponse } from "./lib/types";
 import type { UrlState } from "./lib/urlState";
 
 const DEFAULT_API_BASE = (import.meta.env.VITE_API_BASE ?? "") as string;
+
+// The Aladin chunk (and the CDN script it loads) only downloads when the
+// user enables the overlay.
+const AladinOverlay = lazy(() =>
+  import("./components/overlays/AladinOverlay").then((m) => ({
+    default: m.AladinOverlay,
+  })),
+);
+
+// ?mock=1 renders the full UI from the synthetic payloads (frames +
+// spectrum) with no backend — used for demos and Playwright.
+function mockModeEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("mock") === "1";
+}
+
+// Aperture is a spectrum-request parameter; the mock ignores it because the
+// synthetic response does not depend on the aperture size.
+function createMockSpectrumClient(): SpectrumClient {
+  return {
+    spectrum: (raDeg, decDeg) =>
+      Promise.resolve(makeMockSpectrum(raDeg, decDeg)),
+  };
+}
 
 export interface AppProps {
   apiBase?: string;
@@ -43,7 +93,8 @@ interface ExplorerProps {
   detector: number | null;
   embed: boolean;
   mockData?: FramesResponse;
-  onStatusChange: (s: FramesStatus) => void;
+  onPick: (raDeg: number, decDeg: number) => void;
+  onResult: (r: FramesResult) => void;
   onRetry: () => void;
 }
 
@@ -69,8 +120,8 @@ function Explorer(props: ExplorerProps) {
     mockData,
   );
 
-  const { onStatusChange } = props;
-  useEffect(() => onStatusChange(res.status), [res.status, onStatusChange]);
+  const { onResult } = props;
+  useEffect(() => onResult(res), [res, onResult]);
 
   const transport: TransportState = {
     playing: local.playing,
@@ -123,6 +174,9 @@ function Explorer(props: ExplorerProps) {
 
   const width = res.response?.width ?? 64;
   const height = res.response?.height ?? 64;
+  const current =
+    res.frames[Math.min(Math.max(url.frame, 0), res.frames.length - 1)] ??
+    null;
 
   return (
     <>
@@ -131,17 +185,29 @@ function Explorer(props: ExplorerProps) {
           Updating…
         </p>
       ) : null}
-      <TimeLapseCanvas
-        frames={res.frames}
-        width={width}
-        height={height}
-        unit={res.response?.unit}
-        stretch={url.stretch}
-        cmap={url.cmap}
-        transport={transport}
-        onTransport={onTransport}
-        embed={embed}
-      />
+      <div
+        className="app-stage"
+        onClick={
+          embed
+            ? undefined
+            : canvasClickToSpectrum(
+                { frame: current, width, height },
+                props.onPick,
+              )
+        }
+      >
+        <TimeLapseCanvas
+          frames={res.frames}
+          width={width}
+          height={height}
+          unit={res.response?.unit}
+          stretch={url.stretch}
+          cmap={url.cmap}
+          transport={transport}
+          onTransport={onTransport}
+          embed={embed}
+        />
+      </div>
       {!embed && res.response?.truncated === true ? (
         <p className="app-status">
           Series truncated at {res.frames.length} of{" "}
@@ -153,13 +219,37 @@ function Explorer(props: ExplorerProps) {
 }
 
 export function App(props: AppProps) {
-  const { apiBase = DEFAULT_API_BASE, mockData } = props;
+  const { apiBase = DEFAULT_API_BASE } = props;
   const [url, setUrl] = useUrlState();
   const [detector, setDetector] = useState<number | null>(null);
-  const [status, setStatus] = useState<FramesStatus>("idle");
   const [retryNonce, setRetryNonce] = useState(0);
   const [targets, setTargets] =
     useState<readonly MenuTarget[]>(PRESET_TARGETS);
+  const [overlayOn, setOverlayOn] = useState(false);
+  const [framesResult, setFramesResult] = useState<FramesResult>({
+    status: "idle",
+    response: null,
+    frames: [],
+    error: null,
+  });
+
+  // Mock mode: the prop wins, then ?mock=1. Memoized so useFrames sees a
+  // stable payload and does not refetch on every render.
+  const mockData = useMemo(
+    () =>
+      props.mockData ??
+      (mockModeEnabled() ? makeMockFramesResponse() : undefined),
+    [props.mockData],
+  );
+
+  const spectrumClient = useMemo<SpectrumClient>(
+    () =>
+      mockData !== undefined
+        ? createMockSpectrumClient()
+        : createSpectrumClient(apiBase),
+    [apiBase, mockData],
+  );
+  const spec = useSpectrum(spectrumClient);
 
   // The preset menu prefers server-provided targets (/api/v1/targets) and
   // silently keeps the built-in presets when the backend is unreachable.
@@ -190,6 +280,22 @@ export function App(props: AppProps) {
     (v: CoordinateValue) => setUrl({ ...v, frame: 0 }),
     [setUrl],
   );
+
+  const frames = framesResult.frames;
+  const currentFrame =
+    frames[Math.min(Math.max(url.frame, 0), Math.max(frames.length - 1, 0))] ??
+    null;
+
+  // Overlay view position: the queried position when a response exists,
+  // else the coordinates currently entered in the search bar.
+  const q = framesResult.response?.query;
+  const overlayPos = useMemo(() => {
+    const raDeg = q?.ra_deg ?? parseRaToDeg(url.ra);
+    const decDeg = q?.dec_deg ?? parseDecToDeg(url.dec);
+    if (raDeg === null || raDeg === undefined) return null;
+    if (decDeg === null || decDeg === undefined) return null;
+    return { raDeg, decDeg, fovDeg: q?.fov_deg ?? url.fov };
+  }, [q, url.ra, url.dec, url.fov]);
 
   const panel = (
     <div className="app-controls">
@@ -245,34 +351,91 @@ export function App(props: AppProps) {
           </label>
         </div>
       </section>
+      <section className="app-group" aria-labelledby="app-grp-frame">
+        <h2 className="app-group-title" id="app-grp-frame">
+          Current frame
+        </h2>
+        <FrameMetadata
+          frame={currentFrame?.meta ?? null}
+          unit={framesResult.response?.unit}
+          flagLegend={framesResult.response?.flag_legend}
+        />
+      </section>
+      <section className="app-group" aria-labelledby="app-grp-overlay">
+        <h2 className="app-group-title" id="app-grp-overlay">
+          Overlay
+        </h2>
+        <label className="app-check">
+          <input
+            type="checkbox"
+            checked={overlayOn}
+            onChange={(e) => setOverlayOn(e.currentTarget.checked)}
+          />
+          <span>Catalog overlay (Gaia DR3, AllWISE)</span>
+        </label>
+        {overlayOn ? (
+          overlayPos !== null ? (
+            <Suspense
+              fallback={<p className="app-status">Loading overlay…</p>}
+            >
+              <AladinOverlay
+                raDeg={overlayPos.raDeg}
+                decDeg={overlayPos.decDeg}
+                fovDeg={overlayPos.fovDeg}
+                defaultOpen
+              />
+            </Suspense>
+          ) : (
+            <p className="app-status">
+              Search for a position to enable the sky overlay.
+            </p>
+          )
+        ) : null}
+      </section>
     </div>
   );
 
   return (
-    <AppShell
-      embed={url.embed}
-      targets={targets}
-      onSelectTarget={submitCoords}
-      search={
-        <CoordinateSearchBar
-          value={{ ra: url.ra, dec: url.dec, fov: url.fov }}
-          loading={status === "loading"}
-          onSubmit={submitCoords}
-        />
-      }
-      panel={panel}
-    >
-      <Explorer
-        key={retryNonce}
-        apiBase={apiBase}
-        url={url}
-        setUrl={setUrl}
-        detector={detector}
+    <>
+      <AppShell
         embed={url.embed}
-        mockData={mockData}
-        onStatusChange={setStatus}
-        onRetry={() => setRetryNonce((n) => n + 1)}
-      />
-    </AppShell>
+        targets={targets}
+        onSelectTarget={submitCoords}
+        search={
+          <CoordinateSearchBar
+            value={{ ra: url.ra, dec: url.dec, fov: url.fov }}
+            loading={framesResult.status === "loading"}
+            onSubmit={submitCoords}
+          />
+        }
+        panel={panel}
+      >
+        <Explorer
+          key={retryNonce}
+          apiBase={apiBase}
+          url={url}
+          setUrl={setUrl}
+          detector={detector}
+          embed={url.embed}
+          mockData={mockData}
+          onPick={spec.requestAt}
+          onResult={setFramesResult}
+          onRetry={() => setRetryNonce((n) => n + 1)}
+        />
+      </AppShell>
+      {!url.embed ? (
+        <SpectrumPanel
+          open={spec.open}
+          status={spec.status}
+          spectrum={spec.data}
+          error={spec.error}
+          raDeg={spec.raDeg}
+          decDeg={spec.decDeg}
+          aperturePx={spec.aperturePx}
+          onApertureChange={spec.setAperture}
+          onClose={spec.close}
+        />
+      ) : null}
+    </>
   );
 }

@@ -14,7 +14,7 @@
 - Planet X and SPHEREx, NASA Space Apps 2026: https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/
 
 ## Software (add name, version, license when added)
-- uPlot 1.6.32 (MIT, Leon Sorokin), loaded from jsDelivr: https://github.com/leeoniya/uPlot
+- uPlot 1.6.32 (MIT, Leon Sorokin), bundled as an npm dependency and loaded lazily: https://github.com/leeoniya/uPlot
 - Aladin Lite 3.8.2 (LGPL-3.0, CDS, Université de Strasbourg), loaded from the CDS CDN: https://aladin.cds.unistra.fr/AladinLite/
 - Rust crates and npm packages: filled in from `Cargo.lock` / `package-lock.json` before submission.
 
