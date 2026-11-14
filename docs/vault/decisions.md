@@ -32,3 +32,6 @@ Supersedes the Claude-implements half of D-009. Claude decides, dispatches, revi
 
 ## D-011 (2026-11-14) UI must be responsive and minimalist
 Mobile-first responsive layout (375 px to desktop and iframe embeds), minimalist visual design: the image is the hero, few controls visible, secondary controls (stretch, colormap, mode, overlays, metadata) in a collapsible panel or bottom sheet on mobile and a slim side panel on desktop. Neutral dark palette with one accent, system font stack, CSS variables for tokens, no UI framework or heavy dependency, touch targets >= 44 px, prefers-reduced-motion and prefers-color-scheme respected, WCAG AA contrast. Applies to f1, f2, f4 and is tested in f3. Source: user instruction 2026-11-14.
+
+## D-012 (2026-11-14) b3 merged: custom pure-Rust FITS reader
+fitrs 0.5 cannot read BINTABLE or tile compression and panics on bad input, so b3 wrote a bounds-checked reader (RICE_1, WCS TAN+SIP, WCS-WAVE). fitrs and byteorder become unused; b5 removes them. GZIP-compressed tiles unsupported (not delivered by cutouts).

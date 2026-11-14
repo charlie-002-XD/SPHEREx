@@ -3,9 +3,9 @@
 | Id | Work | Owner | Depends | Status |
 |---|---|---|---|---|
 | p0 | Verify IRSA access, contract, CLAUDE.md, scaffolds | Claude | - | merged (this commit) |
-| b1-validation | Coordinate parsing, validation, AppError | Devin | p0 | todo |
-| b3-fits-parser | MEF parser, WCS, flag legend | Devin | p0 | todo |
-| f1-viewer | WebGL viewer, controls, URL state | Devin | p0 | todo |
+| b1-validation | Coordinate parsing, validation, AppError | Devin | p0 | merged |
+| b3-fits-parser | MEF parser, WCS, flag legend | Devin | p0 | merged |
+| f1-viewer | WebGL viewer, controls, URL state | Devin | p0 | merged |
 | b2-irsa-client | SIA2 + cutouts + cache | Devin | b1, b3 | todo |
 | b4-science | Stack, diff, co-add, spectrum | Devin | b3 | todo |
 | f2-spectrum | Spectrum panel, flags, Aladin | Devin | f1 | todo |
