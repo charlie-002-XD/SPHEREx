@@ -7,6 +7,9 @@
 use axum::{http::StatusCode, response::IntoResponse, response::Response, Json};
 use serde_json::json;
 
+use crate::fits::FitsError;
+use crate::science::ScienceError;
+
 /// Errors surfaced through the HTTP API.
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
@@ -71,5 +74,37 @@ impl IntoResponse for AppError {
             }
         }));
         (status, body).into_response()
+    }
+}
+
+impl From<FitsError> for AppError {
+    /// A cutout that fails to parse is malformed upstream data: HTTP 502
+    /// (`upstream_unavailable`); parser internals never reach the client.
+    fn from(_: FitsError) -> Self {
+        Self::UpstreamUnavailable
+    }
+}
+
+impl From<ScienceError> for AppError {
+    /// Caller-fixable conditions map to 400 with a constraint message
+    /// (never echoing raw input); empty extraction maps to 404; upstream
+    /// WCS trouble maps to 502; grid/shape invariants are internal bugs.
+    fn from(e: ScienceError) -> Self {
+        match e {
+            ScienceError::InvalidAperture { .. } => {
+                Self::invalid_parameter("aperture_px: expected one of 1, 3, 5")
+            }
+            ScienceError::InvalidDetector { .. } => {
+                Self::invalid_parameter("detector: out of range [1, 6]")
+            }
+            ScienceError::WavelengthMismatch { .. } | ScienceError::UnknownWavelength => {
+                Self::invalid_parameter("epochs are not compatible for this mode")
+            }
+            ScienceError::EmptyInput => Self::NotFound,
+            ScienceError::Wcs(_) => Self::UpstreamUnavailable,
+            ScienceError::ShapeMismatch { .. }
+            | ScienceError::GridMismatch
+            | ScienceError::InvalidGrid(_) => Self::Internal,
+        }
     }
 }

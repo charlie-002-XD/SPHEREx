@@ -22,11 +22,9 @@ serde_json = "1"
 thiserror = "1"
 ndarray = "0.16"
 moka = { version = "0.12", features = ["future"] }
-tower = "0.5"
+tower = { version = "0.5", features = ["util"] }
 tower-http = { version = "0.6", features = ["fs", "cors", "compression-gzip", "trace", "timeout", "set-header"] }
 tower_governor = "0.4"
-fitrs = "0.5"
-byteorder = "1"
 base64 = "0.22"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
