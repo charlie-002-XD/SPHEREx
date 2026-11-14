@@ -10,7 +10,8 @@ Updated: 2026-11-14. Deadline: Sun 2026-11-15 23:59 local; internal target 18:00
 | b3-fits-parser | merged (13 tests, validated on real cutout) |
 | b4-science | merged (15 tests) |
 | b2-irsa-client | merged (19 tests, live-verified) |
-| b5-api-routes | running (Devin) |
+| ops-docker-ci | merged (docker build verified by Devin) |
+| b5-api-routes, f5-wire-spectrum | running (Devin) |
 | f4-layout-design | merged (58 FE tests, build 74 kB gz) |
 | f2-spectrum | merged (82 FE tests); not yet wired into App.tsx |
 | Wave 3: b5-api-routes | blocked on b1, b2, b4 |
