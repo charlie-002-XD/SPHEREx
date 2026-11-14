@@ -1,0 +1,4 @@
+.devin-worktrees/
+.devin-runs/
+.env
+*.log

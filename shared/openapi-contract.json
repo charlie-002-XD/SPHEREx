@@ -1,0 +1,183 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SPHEREx Sky Time-Lapse API",
+    "version": "0.1.0",
+    "description": "Single source of truth for backend (Rust) and frontend (TypeScript). Change only via the orchestrator. Pixel data is row-major float32 little-endian, base64, NaN allowed. Image units are MJy/sr as delivered by SPHEREx (zodiacal light removed only when zodi_subtracted is true)."
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "Service status",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Health" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/targets": {
+      "get": {
+        "operationId": "getTargets",
+        "responses": {
+          "200": {
+            "description": "Preset targets",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Target" } } } }
+          }
+        }
+      }
+    },
+    "/api/v1/frames": {
+      "get": {
+        "operationId": "getFrames",
+        "description": "Time series of cutouts around (ra, dec), sorted by observation time. In mode diff/coadd, each frame is computed against the first frame of the same detector group (or the pair given by ref_frame).",
+        "parameters": [
+          { "name": "ra", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Decimal degrees or sexagesimal (08h55m10.831s). Must resolve to 0 <= ra < 360." },
+          { "name": "dec", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Decimal degrees or sexagesimal (-07d14m42.53s). Must resolve to -90 <= dec <= 90." },
+          { "name": "fov", "in": "query", "required": false, "schema": { "type": "number", "minimum": 0.01, "maximum": 0.5, "default": 0.05 }, "description": "Field of view, degrees." },
+          { "name": "mode", "in": "query", "required": false, "schema": { "type": "string", "enum": ["raw", "diff", "coadd", "stack"], "default": "raw" } },
+          { "name": "detector", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 6 }, "description": "Restrict to one detector array." },
+          { "name": "max_frames", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 120, "default": 60 } },
+          { "name": "subtract_zodi", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } }
+        ],
+        "responses": {
+          "200": { "description": "Frames", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FramesResponse" } } } },
+          "400": { "description": "Invalid parameters", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorBody" } } } },
+          "404": { "description": "No SPHEREx observations at this position", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorBody" } } } },
+          "429": { "description": "Rate limited", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorBody" } } } },
+          "502": { "description": "IRSA unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorBody" } } } }
+        }
+      }
+    },
+    "/api/v1/spectrum": {
+      "get": {
+        "operationId": "getSpectrum",
+        "description": "Spectrum at a sky position: aperture-averaged surface brightness for every available exposure covering it, sorted by wavelength. Number of points is data dependent.",
+        "parameters": [
+          { "name": "ra", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "dec", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "aperture_px", "in": "query", "required": false, "schema": { "type": "integer", "enum": [1, 3, 5], "default": 3 } }
+        ],
+        "responses": {
+          "200": { "description": "Spectrum", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SpectrumResponse" } } } },
+          "400": { "description": "Invalid parameters", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorBody" } } } },
+          "404": { "description": "No observations", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorBody" } } } },
+          "502": { "description": "IRSA unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorBody" } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Health": {
+        "type": "object",
+        "required": ["status", "version", "collections"],
+        "properties": {
+          "status": { "type": "string", "enum": ["ok"] },
+          "version": { "type": "string" },
+          "collections": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "Target": {
+        "type": "object",
+        "required": ["id", "name", "ra_deg", "dec_deg", "fov_deg"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "ra_deg": { "type": "number" },
+          "dec_deg": { "type": "number" },
+          "fov_deg": { "type": "number" },
+          "note": { "type": "string" }
+        }
+      },
+      "Wcs": {
+        "type": "object",
+        "description": "Linear approximation of the celestial WCS of the cutout (TAN projection).",
+        "required": ["crpix", "crval", "cd"],
+        "properties": {
+          "crpix": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2, "description": "1-based reference pixel [x, y]." },
+          "crval": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2, "description": "[ra_deg, dec_deg] at crpix." },
+          "cd": { "type": "array", "items": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }, "minItems": 2, "maxItems": 2, "description": "Degrees per pixel, [[cd11, cd12], [cd21, cd22]]." }
+        }
+      },
+      "Frame": {
+        "type": "object",
+        "required": ["id", "obs_mjd_start", "obs_mjd_end", "detector", "wavelength_um", "collection", "wcs", "data_b64"],
+        "properties": {
+          "id": { "type": "string", "description": "Stable id (hash of the access URL)." },
+          "obs_mjd_start": { "type": "number" },
+          "obs_mjd_end": { "type": "number" },
+          "detector": { "type": "integer", "minimum": 1, "maximum": 6 },
+          "wavelength_um": { "type": "number", "description": "Central wavelength at the cutout center." },
+          "bandwidth_um": { "type": "number" },
+          "collection": { "type": "string", "description": "IRSA collection, e.g. spherex_dr1 or spherex_qr3." },
+          "zodi_subtracted": { "type": "boolean" },
+          "flags": { "type": "array", "items": { "type": "string" }, "description": "Names of flag bits set in the central 3x3 pixels, taken from the FITS FLAGS header legend." },
+          "wcs": { "$ref": "#/components/schemas/Wcs" },
+          "data_b64": { "type": "string", "description": "width*height float32 LE, row-major, base64." }
+        }
+      },
+      "FramesResponse": {
+        "type": "object",
+        "required": ["query", "width", "height", "unit", "frames", "flag_legend"],
+        "properties": {
+          "query": {
+            "type": "object",
+            "required": ["ra_deg", "dec_deg", "fov_deg", "mode"],
+            "properties": {
+              "ra_deg": { "type": "number" },
+              "dec_deg": { "type": "number" },
+              "fov_deg": { "type": "number" },
+              "mode": { "type": "string", "enum": ["raw", "diff", "coadd", "stack"] }
+            }
+          },
+          "width": { "type": "integer" },
+          "height": { "type": "integer" },
+          "unit": { "type": "string", "example": "MJy/sr" },
+          "frames": { "type": "array", "items": { "$ref": "#/components/schemas/Frame" } },
+          "flag_legend": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Bit number (as string) to description, from the FITS FLAGS header (MSKNnnnn / MSKDnnnn)." },
+          "truncated": { "type": "boolean", "description": "True if more observations exist than max_frames." },
+          "total_observations": { "type": "integer" }
+        }
+      },
+      "SpectrumPoint": {
+        "type": "object",
+        "required": ["wavelength_um", "value", "sigma", "obs_mjd", "detector"],
+        "properties": {
+          "wavelength_um": { "type": "number" },
+          "bandwidth_um": { "type": "number" },
+          "value": { "type": "number", "description": "Mean surface brightness in the aperture, MJy/sr." },
+          "sigma": { "type": "number", "description": "1-sigma uncertainty from the VARIANCE extension." },
+          "obs_mjd": { "type": "number" },
+          "detector": { "type": "integer", "minimum": 1, "maximum": 6 },
+          "flags": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "SpectrumResponse": {
+        "type": "object",
+        "required": ["ra_deg", "dec_deg", "unit", "points"],
+        "properties": {
+          "ra_deg": { "type": "number" },
+          "dec_deg": { "type": "number" },
+          "unit": { "type": "string", "example": "MJy/sr" },
+          "points": { "type": "array", "items": { "$ref": "#/components/schemas/SpectrumPoint" } }
+        }
+      },
+      "ErrorBody": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": ["code", "message"],
+            "properties": {
+              "code": { "type": "string", "enum": ["invalid_parameter", "not_found", "rate_limited", "upstream_unavailable", "internal"] },
+              "message": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
