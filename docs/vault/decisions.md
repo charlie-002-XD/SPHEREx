@@ -35,3 +35,6 @@ Mobile-first responsive layout (375 px to desktop and iframe embeds), minimalist
 
 ## D-012 (2026-11-14) b3 merged: custom pure-Rust FITS reader
 fitrs 0.5 cannot read BINTABLE or tile compression and panics on bad input, so b3 wrote a bounds-checked reader (RICE_1, WCS TAN+SIP, WCS-WAVE). fitrs and byteorder become unused; b5 removes them. GZIP-compressed tiles unsupported (not delivered by cutouts).
+
+## D-013 (2026-11-14) f2 merged; CDN runtime deps to be bundled
+f2 loads uPlot 1.6.32 (SRI) from jsDelivr at runtime and Aladin Lite from a CDN. Integration should bundle uPlot via npm (judges' networks may block CDNs; FortiGuard); Aladin Lite stays CDN-loaded but behind an ErrorBoundary so the viewer works without it. Components are not wired into App.tsx yet: integration step wires SpectrumPanel, FrameMetadata and AladinOverlay.
