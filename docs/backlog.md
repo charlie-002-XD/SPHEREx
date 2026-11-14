@@ -10,7 +10,7 @@
 | b4-science | Stack, diff, co-add, spectrum | Devin | b3 | merged |
 | f2-spectrum | Spectrum panel, flags, Aladin | Devin | f1 | merged |
 | b5-api-routes | Routes, config, static serving, limits | Devin | b1, b2, b4 | todo |
-| f5-wire-spectrum | Wire spectrum/metadata/overlay, bundle uPlot, ?mock=1 | Devin | f2, f4 | running |
+| f5-wire-spectrum | Wire spectrum/metadata/overlay, bundle uPlot, ?mock=1 | Devin | f2, f4 | merged |
 | ops-docker-ci | Dockerfile, CI, DEPLOY.md | Devin | - | running |
 | integration | Frontend <-> backend, real WISE 0855 | Claude | b5, f1, f2 | todo |
 | f4-layout-design | Minimalist responsive app shell, tokens, embed mode | Devin | f1 | merged |
