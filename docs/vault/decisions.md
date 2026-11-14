@@ -50,3 +50,6 @@ Checked ?mock=1 in Chrome at 375, 768 and 1440 px: no horizontal overflow, image
 
 ## D-017 (2026-11-14) Opus 5.5 agent for complex tasks
 New agent spherex-complex-engineer (model claude-opus-5-5, plugin agents/ and repo .claude/agents/). Delegation criteria and commands are in the wave-orchestration skill. Devin stays the default for routine tasks. Branches opus/<id>, worktree .devin-worktrees/<id>-opus, commit trailer 'Generated-by: Claude Opus 5.5 (SI-assisted)'. First delegations: real-data integration and any gate that fails twice. Source: user instruction 2026-11-14.
+
+## D-018 (2026-11-14) integration-live delegated to Opus
+Reason per policy: spans backend and frontend, needs real IRSA data and numeric verification of WCS alignment and proper-motion displacement. Branch opus/integration-live.
