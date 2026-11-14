@@ -7,7 +7,7 @@
 | b3-fits-parser | MEF parser, WCS, flag legend | Devin | p0 | merged |
 | f1-viewer | WebGL viewer, controls, URL state | Devin | p0 | merged |
 | b2-irsa-client | SIA2 + cutouts + cache | Devin | b1, b3 | todo |
-| b4-science | Stack, diff, co-add, spectrum | Devin | b3 | todo |
+| b4-science | Stack, diff, co-add, spectrum | Devin | b3 | merged |
 | f2-spectrum | Spectrum panel, flags, Aladin | Devin | f1 | merged |
 | b5-api-routes | Routes, config, static serving, limits | Devin | b1, b2, b4 | todo |
 | integration | Frontend <-> backend, real WISE 0855 | Claude | b5, f1, f2 | todo |
