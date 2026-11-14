@@ -13,3 +13,8 @@ Quick reference
 - FLAGS arrives uncompressed in cutouts (BITPIX=32 IMAGE); legend keys MSKN0000='TRANSIENT' ... MSKN0028='HALO'.
 - WCS-WAVE: 1 row, X/Y = 9J control coords 1..2040 (full frame), VALUES = 162E = 81 (wavelength, bandwidth) pairs, x fastest. Wavelength at cutout centre 1.108 um vs SIA em_max 1.117 um.
 - Sky WCS is TAN + SIP; round trip pixel<->RA/Dec exact to ~1e-12 px.
+
+## Verified live by b2 (2026-11-14)
+- SIA2 `POS=circle ra dec radius` (lowercase) -> 200, 107 rows at the b3 test position. FIELD units: `em_min/em_max` in m, `t_min/t_max` in d (MJD). `energy_bandpassname` like "SPHEREx-D1". `access_url` is a plain `/ibe/data/...fits` URL.
+- Cutout `?center=ra,dec&size=0.05deg` -> 200, 29x29 px. Parent files are ~65 MB.
+- HTTP 503 "Server busy, retry later" observed on single cutout requests (third-party report confirmed). HTTP 422 "Arrays do not overlap" when the cutout square misses the array although `s_region` covers the point (more frequent on DR1 rows).

@@ -38,3 +38,6 @@ fitrs 0.5 cannot read BINTABLE or tile compression and panics on bad input, so b
 
 ## D-013 (2026-11-14) f2 merged; CDN runtime deps to be bundled
 f2 loads uPlot 1.6.32 (SRI) from jsDelivr at runtime and Aladin Lite from a CDN. Integration should bundle uPlot via npm (judges' networks may block CDNs; FortiGuard); Aladin Lite stays CDN-loaded but behind an ErrorBoundary so the viewer works without it. Components are not wired into App.tsx yet: integration step wires SpectrumPanel, FrameMetadata and AladinOverlay.
+
+## D-014 (2026-11-14) b2 merged; API defaults for responsiveness
+Live IRSA confirmed: 503 'Server busy' is real (retries mandatory) and 422 'Arrays do not overlap' occurs when SIA footprint covers a point but the array does not (cutout skipped, partial results). IRSA can take minutes for 60 frames, so contract max_frames default is now 24 (max 60) and the API has a total deadline (REQUEST_DEADLINE_SECS=40) returning partial frames with truncated=true. Output images capped at OUTPUT_NPIX=192.
