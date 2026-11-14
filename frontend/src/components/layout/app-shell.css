@@ -1,9 +1,17 @@
-/* App shell layout, target menu, panel/bottom-sheet, full-area states and
-   the token bridge that remaps f1's hardcoded colors inside .app so the
-   whole UI follows tokens.css in both color schemes. Mobile-first: the
-   desktop (>= 640px) rules live in the media query at the bottom. */
+/* App shell: layout, header + target menu, controls panel / bottom sheet,
+   the docked spectrum drawer, full-area states and embed mode. Tokens
+   only (tokens.css). Mobile-first; the >= 640px layer and the wide
+   landscape layer are at the bottom.
+
+   Layout rules
+   - The image is the largest element at every size.
+   - Nothing floats over interactive controls: the spectrum drawer is part
+     of the layout (under the image, or beside it on wide landscape
+     screens) and the controls panel is its own column / in-flow sheet.
+   - Gutters: 12px on phones, 16px from 640px. 4/8px rhythm everywhere. */
 
 .app {
+  --gutter: var(--space-3);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -12,7 +20,7 @@
   font-family: var(--font-sans);
 }
 
-/* ---------- header ---------- */
+/* ---------- header: one quiet line ---------- */
 
 .app-header {
   flex: none;
@@ -20,17 +28,22 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  min-height: var(--header-h);
-  padding-inline: var(--space-4);
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-raised);
+  height: var(--header-h);
+  padding-inline: var(--gutter) var(--space-1);
+  border-bottom: var(--hairline) solid var(--border);
 }
-
 .app-title {
-  font-size: var(--text-lg);
-  font-weight: 650;
-  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-md);
+  font-weight: var(--weight-strong);
   white-space: nowrap;
+}
+.app-mark {
+  width: var(--icon);
+  height: var(--icon);
+  color: var(--accent);
 }
 
 /* ---------- target preset menu ---------- */
@@ -38,54 +51,48 @@
 .tmenu {
   position: relative;
 }
-
 .tmenu-summary {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   min-height: var(--target);
   padding: 0 var(--space-3);
-  border: 1px solid var(--border);
   border-radius: var(--radius-m);
-  background: var(--bg);
   color: var(--fg-dim);
   font-size: var(--text-sm);
   user-select: none;
+  transition:
+    color var(--dur-1) var(--ease),
+    background-color var(--dur-1) var(--ease);
 }
-.tmenu-summary:hover {
-  color: var(--fg);
-  background: var(--bg-hover);
-}
+.tmenu-summary:hover,
 .tmenu[open] > .tmenu-summary {
   color: var(--fg);
-  border-color: var(--accent);
+  background: var(--bg-hover);
 }
 .tmenu-icon {
   width: 1rem;
   height: 1rem;
 }
-
 .tmenu-list {
   position: absolute;
   top: calc(100% + var(--space-1));
   right: 0;
   z-index: 30;
-  min-width: 15rem;
-  max-width: calc(100vw - 2 * var(--space-4));
+  min-width: 16rem;
+  max-width: calc(100vw - 2 * var(--gutter));
   max-height: 60dvh;
   overflow-y: auto;
   padding: var(--space-1);
   background: var(--bg-raised);
-  border: 1px solid var(--border);
+  border: var(--hairline) solid var(--border-strong);
   border-radius: var(--radius-m);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow); /* the only floating layer */
 }
-
 .tmenu-item {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
   width: 100%;
   min-height: var(--target);
   padding: var(--space-2) var(--space-3);
@@ -100,15 +107,16 @@
   background: var(--bg-hover);
 }
 .tmenu-name {
-  font-weight: 600;
+  font-weight: var(--weight-strong);
 }
 .tmenu-coords {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
 }
 
-/* ---------- body: viewer + search + panel ---------- */
+/* ---------- body: view (search + image + drawer) and panel ---------- */
 
 .app-body {
   flex: 1;
@@ -116,14 +124,13 @@
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  /* On mobile the open bottom sheet can exceed the space left by the
-     viewer; scroll the body region instead of crushing the image to 0. */
+  /* Mobile: the page scrolls when the sheet or the spectrum is open, so
+     the image keeps its floor instead of being crushed. */
   overflow-y: auto;
 }
 
 .app-view {
-  /* flex-basis auto: the view never shrinks below its own content, so the
-     hero image keeps a usable floor when the sheet is open on mobile. */
+  /* flex-basis auto: never shrinks below its content on mobile. */
   flex: 1 0 auto;
   display: flex;
   flex-direction: column;
@@ -131,120 +138,42 @@
   min-width: 0;
 }
 
-/* Mobile visual order: image on top, search row under it. DOM order stays
-   search-first, which keeps the keyboard order matching the task flow. */
+/* Mobile visual order: image + transport, spectrum (when open), search,
+   then the sheet handle. DOM order stays search-first for keyboard. */
 .app-main {
   order: -1;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  /* Floor on mobile so the cutout (and click-to-spectrum) stays usable
-     while the bottom sheet is open; reset in the desktop layer. */
-  min-height: 15rem;
-  min-width: 0;
-  padding: var(--space-3) var(--space-4);
-}
-
-.app-search {
-  flex: none;
-  padding: var(--space-2) var(--space-4);
-  border-top: 1px solid var(--border);
-}
-
-/* ---------- secondary-controls panel (mobile bottom sheet) ---------- */
-
-.app-panel {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  min-height: var(--target);
-  border-top: 1px solid var(--border);
-  background: var(--bg-raised);
-}
-
-.app-panel-toggle {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  width: 100%;
-  min-height: var(--target);
-  padding: 0 var(--space-4);
-  background: none;
-  border: none;
-  color: var(--fg-dim);
-  font-size: var(--text-sm);
-  font-weight: 600;
-}
-.app-panel-toggle:hover {
-  color: var(--fg);
-  background: var(--bg-hover);
-}
-.app-panel-toggle-label {
-  white-space: nowrap;
-}
-
-/* Grab-handle pill (mobile) / rail bar (desktop collapsed). */
-.app-panel-grip {
-  flex: none;
-  width: 2rem;
-  height: 0.25rem;
-  border-radius: var(--radius-pill);
-  background: var(--fg-faint);
-}
-
-.app-chev {
-  flex: none;
-  width: 1rem;
-  height: 1rem;
-  transition: transform var(--dur-1) var(--ease);
-  /* closed on mobile: point up = sheet opens upward */
-  transform: rotate(-90deg);
-}
-.app-panel-toggle[aria-expanded="true"] .app-chev {
-  transform: rotate(90deg);
-}
-
-.app-panel-body {
-  overflow-y: auto;
-  max-height: 55dvh;
-  padding: 0 var(--space-4) var(--space-4);
-}
-
-.app-controls {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-.app-group-title {
-  margin-bottom: var(--space-2);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--fg-faint);
-}
-.app-fields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-.app-field {
+  flex: 1 0 auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  flex: 1 1 8rem;
-  font-size: var(--text-sm);
-  color: var(--fg-dim);
+  min-width: 0;
+  padding: var(--space-2) var(--gutter) 0;
 }
-.app-field select {
-  min-height: var(--target);
-  padding: 0 var(--space-3);
-  color: var(--fg);
-  background: var(--bg-inset);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-s);
+.app-drawer {
+  order: -1;
+  flex: none;
+  min-width: 0;
+  border-top: var(--hairline) solid var(--border);
+  background: var(--bg-raised);
+}
+.app-search {
+  flex: none;
+  padding: var(--space-2) var(--gutter) var(--space-3);
+}
+
+/* Viewer chain: fills .app-main. On phones the stage keeps a square floor
+   (the cutout is square) and grows into any spare height. */
+.app-stage {
+  flex: 1 0 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.app-stage .tl-stage,
+.app-main > .state,
+.app-main > .state-loading {
+  flex: 1 0 auto;
+  min-height: min(calc(100vw - 2 * var(--gutter)), 58dvh);
 }
 
 .app-status {
@@ -253,16 +182,157 @@
   color: var(--fg-dim);
 }
 
-/* Wrapper that carries the click-to-spectrum handler; fills .app-main so
-   the viewer keeps its height. */
-.app-stage {
-  flex: 1;
-  min-height: 0;
+/* ---------- controls panel (mobile bottom sheet) ---------- */
+
+.app-panel {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: var(--target);
+  border-top: var(--hairline) solid var(--border);
+  background: var(--bg-raised);
+}
+.app-panel-toggle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--target);
+  padding: 0 var(--gutter);
+  background: none;
+  border: none;
+  color: var(--fg-dim);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-strong);
+  transition:
+    color var(--dur-1) var(--ease),
+    background-color var(--dur-1) var(--ease);
+}
+.app-panel-toggle:hover {
+  color: var(--fg);
+  background: var(--bg-hover);
+}
+.app-panel-toggle:focus-visible {
+  outline-offset: -2px;
+}
+.app-panel-toggle-label {
+  white-space: nowrap;
+}
+.app-panel-grip {
+  flex: none;
+  width: 2rem;
+  height: 0.25rem;
+  border-radius: var(--radius-pill);
+  background: var(--border-strong);
+}
+.app-chev {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  transition: transform var(--dur-2) var(--ease);
+  transform: rotate(-90deg); /* closed sheet: opens upward */
+}
+.app-panel-toggle[aria-expanded="true"] .app-chev {
+  transform: rotate(90deg);
+}
+.app-panel-body {
+  overflow-y: auto;
+  max-height: 60dvh;
+  padding: 0 var(--gutter) var(--space-4);
+}
+
+/* Collapsible groups with micro-labels, separated by hairlines. */
+.app-controls {
   display: flex;
   flex-direction: column;
 }
+.app-group {
+  padding-bottom: var(--space-3);
+}
+.app-group + .app-group {
+  border-top: var(--hairline) solid var(--border);
+}
+.app-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--target);
+  color: var(--fg-faint);
+  transition: color var(--dur-1) var(--ease);
+}
+.app-group-title:hover {
+  color: var(--fg-dim);
+}
+.app-group-title:focus-visible {
+  outline-offset: -2px;
+}
+.app-group-title h2 {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+}
+.app-group-chev {
+  width: 1rem;
+  height: 1rem;
+  transition: transform var(--dur-2) var(--ease);
+  transform: rotate(-90deg);
+}
+.app-group[open] > .app-group-title .app-group-chev {
+  transform: none;
+}
+.app-group:not([open]) {
+  padding-bottom: 0;
+}
 
-/* Checkbox rows inside the secondary-controls panel (overlay toggle). */
+.app-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.app-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  font-size: var(--text-xs);
+  color: var(--fg-dim);
+}
+.app-field select {
+  width: 100%;
+  min-height: var(--target);
+}
+
+/* Native selects: token-colored box, CSS-drawn chevron (no image file). */
+.app select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding: 0 var(--space-6) 0 var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--fg);
+  background-color: var(--bg-inset);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--fg-dim) 50%),
+    linear-gradient(135deg, var(--fg-dim) 50%, transparent 50%);
+  background-position:
+    calc(100% - 1.125rem) 50%,
+    calc(100% - 0.8125rem) 50%;
+  background-size: 0.3125rem 0.3125rem;
+  background-repeat: no-repeat;
+  border: var(--hairline) solid var(--border-strong);
+  border-radius: var(--radius-m);
+  transition: border-color var(--dur-1) var(--ease);
+}
+.app select:hover {
+  border-color: var(--fg-faint);
+}
+.app select option {
+  color: var(--fg);
+  background: var(--bg-raised);
+}
+
 .app-check {
   display: flex;
   align-items: center;
@@ -270,11 +340,18 @@
   min-height: var(--target);
   font-size: var(--text-sm);
   color: var(--fg);
+  cursor: pointer;
 }
 .app-check input {
   flex: none;
   width: 1rem;
   height: 1rem;
+  margin: 0;
+}
+
+/* Presets live in the header target menu; hide the duplicate pill row. */
+.app .csb-presets {
+  display: none;
 }
 
 /* ---------- full-area states (empty / loading / error) ---------- */
@@ -287,73 +364,79 @@
   align-items: center;
   justify-content: center;
 }
-
 .state {
   padding: var(--space-5);
   text-align: center;
   background: var(--bg-inset);
-  border: 1px dashed var(--border);
+  border: var(--hairline) solid var(--border);
   border-radius: var(--radius-m);
 }
 .state-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
-  max-width: 26rem;
+  gap: var(--space-2);
+  max-width: 24rem;
 }
 .state-icon {
-  width: 3rem;
-  height: 3rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: var(--space-2);
   color: var(--fg-faint);
 }
 .state-title {
   font-size: var(--text-lg);
-  font-weight: 600;
+  font-weight: var(--weight-strong);
 }
 .state-hint {
   font-size: var(--text-sm);
   color: var(--fg-dim);
 }
-.state-error {
-  border-style: solid;
-  border-color: var(--danger);
-}
-.state-error .state-icon,
-.state-error .state-title {
+.state-error .state-icon {
   color: var(--danger);
 }
 .state-retry {
   min-height: var(--target);
+  margin-top: var(--space-3);
   padding: 0 var(--space-5);
   border: none;
-  border-radius: var(--radius-s);
+  border-radius: var(--radius-m);
   background: var(--accent);
   color: var(--accent-fg);
-  font-weight: 650;
+  font-weight: var(--weight-strong);
+  transition: opacity var(--dur-1) var(--ease);
 }
 .state-retry:hover {
-  filter: brightness(1.1);
+  opacity: 0.88;
 }
 
 .state-loading {
-  padding: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
 }
 .skel {
   flex: 1;
-  height: 100%;
-  border: 1px solid var(--border);
   border-radius: var(--radius-m);
   background:
     linear-gradient(
       100deg,
       var(--bg-inset) 40%,
-      var(--bg-raised) 50%,
+      var(--skel-hi) 50%,
       var(--bg-inset) 60%
     ),
     var(--bg-inset);
   background-size: 200% 100%, 100% 100%;
+  border: var(--hairline) solid var(--border);
   animation: skel-scan 1.4s linear infinite;
+}
+/* A thin bar where the transport will appear keeps the layout stable. */
+.state-loading::after {
+  content: "";
+  flex: none;
+  height: var(--target);
+  border-radius: var(--radius-m);
+  background: var(--bg-inset);
 }
 @keyframes skel-scan {
   to {
@@ -373,164 +456,75 @@
 }
 .app-embed .app-main {
   order: 0;
-  padding: 0;
-}
-
-/* ---------- token bridge for f1 components (viewer, controls) ---------- */
-
-.app .tl-viewer {
-  height: 100%;
+  flex: 1 1 auto;
   min-height: 0;
-  gap: var(--space-2);
-  color: var(--fg);
+  padding: 0 0 var(--space-1);
 }
-.app .tl-stage {
-  flex: 1;
+.app-embed .app-stage .tl-stage {
+  flex: 1 1 auto;
   min-height: 0;
-  aspect-ratio: auto; /* fill .app-main; aspect kept by object-fit below */
-  background: var(--bg-inset);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
+  border: none;
+  border-radius: 0;
 }
-.app .tl-canvas {
-  object-fit: contain; /* letterbox instead of stretching the cutout */
-  cursor: crosshair; /* hint: click samples a spectrum */
-}
-.app .tl-overlay {
-  background: var(--overlay);
-  color: var(--fg);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-}
-.app .tl-flag {
-  color: var(--warn);
-}
-.app .tl-empty {
-  color: var(--fg-faint);
-}
-.app .tl-transport {
-  gap: var(--space-2);
-}
-.app .tl-transport button {
-  min-width: var(--target);
-  height: var(--target);
-  padding: 0 var(--space-3);
-  color: var(--fg);
-  background: var(--bg-raised);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-s);
-}
-.app .tl-transport button:hover:not(:disabled) {
-  background: var(--bg-hover);
-}
-.app .tl-transport button[aria-pressed="true"] {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-}
-.app .tl-scrubber {
-  min-height: var(--target);
-}
-.app .tl-fps-label {
-  font-family: var(--font-mono);
-  color: var(--fg-dim);
-}
-
-/* Coordinate search bar */
-.app .csb {
-  color: var(--fg);
-  font-size: var(--text-sm);
-}
-.app .csb-row {
-  gap: var(--space-2);
-}
-.app .csb-field {
-  flex: 1 1 9rem;
-  min-width: 7rem;
-}
-.app .csb-field span {
-  color: var(--fg-dim);
-}
-.app .csb-field input[type="text"] {
-  height: var(--target);
-  padding: 0 var(--space-3);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  color: var(--fg);
-  background: var(--bg-inset);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-s);
-}
-.app .csb-field input[aria-invalid="true"] {
-  border-color: var(--danger);
-}
-.app .csb-fov input[type="range"] {
-  height: var(--target);
-}
-.app .csb-go {
-  height: var(--target);
-  padding: 0 var(--space-5);
-  background: var(--accent);
-  color: var(--accent-fg);
-  border-radius: var(--radius-s);
-  font-weight: 650;
-}
-.app .csb-error {
-  color: var(--danger);
-}
-/* Presets live in the header target menu; hide the duplicate pill row. */
-.app .csb-presets {
-  display: none;
-}
-
-/* Mode / detector selector */
-.app .ms-group {
-  flex-wrap: wrap; /* the 320px panel is too narrow for All + D1-D6 inline */
-  background: var(--bg-inset);
-  border-color: var(--border);
-}
-.app .ms-opt {
-  min-height: calc(var(--target) - var(--space-1));
-  min-width: var(--target);
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-sm);
-  color: var(--fg-dim);
-}
-.app .ms-opt:hover {
-  color: var(--fg);
-}
-.app .ms-on {
-  color: var(--fg);
-  background: var(--accent-soft);
+.app-embed .tl-transport {
+  padding-inline: var(--space-2);
 }
 
 /* ---------- tablet / desktop (>= 640px) ---------- */
 
 @media (min-width: 640px) {
+  .app {
+    --gutter: var(--space-4);
+  }
   .app-body {
     flex-direction: row;
     overflow-y: hidden;
   }
   .app-view {
-    flex: 1; /* shrink to the space left by the side panel */
-  }
-  .app-main {
-    order: 0; /* DOM order: search above the image on wide screens */
-    min-height: 0;
+    flex: 1 1 auto; /* shrink to the space left by the side panel */
   }
   .app-search {
-    border-top: none;
-    border-bottom: 1px solid var(--border);
+    order: -2; /* search row above the image on wide screens */
+    padding: var(--space-3) var(--gutter);
+    border-bottom: var(--hairline) solid var(--border);
+  }
+  .app-main {
+    order: 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: var(--space-3) var(--gutter) var(--space-2);
+  }
+  .app-stage,
+  .app-stage .tl-stage,
+  .app-main > .state,
+  .app-main > .state-loading {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  /* Spectrum drawer docked under the image: the image shrinks, nothing
+     is covered. */
+  .app-drawer {
+    order: 1;
+    height: var(--drawer-h);
   }
 
   .app-panel {
     width: var(--panel-w);
     border-top: none;
-    border-left: 1px solid var(--border);
+    border-left: var(--hairline) solid var(--border);
+  }
+  .app-panel-toggle {
+    justify-content: space-between;
+    padding: 0 var(--space-2) 0 var(--gutter);
+    border-bottom: var(--hairline) solid var(--border);
+  }
+  .app-panel-grip {
+    display: none;
   }
   .app-panel-body {
     flex: 1;
     max-height: none;
-    padding-top: var(--space-3);
+    padding: 0 var(--gutter) var(--space-4);
   }
 
   /* Collapsed: slim vertical rail with a rotated label. */
@@ -540,22 +534,57 @@
   }
   .app-panel-closed .app-panel-toggle {
     flex-direction: column;
+    justify-content: flex-start;
     height: 100%;
     padding: var(--space-3) 0;
+    border-bottom: none;
   }
   .app-panel-closed .app-panel-toggle-label {
     writing-mode: vertical-rl;
   }
-  .app-panel-closed .app-panel-grip {
-    width: 0.25rem;
-    height: 2rem;
-  }
 
-  /* Closed on desktop: point left = panel opens to the left. */
+  /* Closed: point left = panel opens to the left. */
   .app-panel-toggle .app-chev {
     transform: rotate(180deg);
   }
   .app-panel-toggle[aria-expanded="true"] .app-chev {
     transform: none;
+  }
+}
+
+/* ---------- wide landscape: spectrum beside the image ---------- */
+
+/* The square cutout leaves horizontal room on wide landscape screens;
+   the drawer uses it instead of taking height from the image. */
+@media (min-width: 1100px) and (min-aspect-ratio: 5/4) {
+  .app-view-drawer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--drawer-w);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .app-view-drawer > .app-search {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .app-view-drawer > .app-main {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .app-view-drawer > .app-drawer {
+    grid-column: 2;
+    grid-row: 2;
+    height: auto;
+    min-height: 0;
+    overflow-y: auto;
+    border-top: none;
+    border-left: var(--hairline) solid var(--border);
+  }
+  .app-view-drawer .sp-panel {
+    padding-top: var(--space-3);
+  }
+  /* Keep the chart wider than tall; spare height goes below the footer. */
+  .app-view-drawer .sp-body {
+    flex: 0 1 auto;
+    height: min(20rem, 60%);
   }
 }

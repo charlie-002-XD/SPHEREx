@@ -1,82 +1,106 @@
-/* Design tokens for SPHEREx Blink. Dark neutral palette by default with a
-   light scheme via prefers-color-scheme; one accent color; system fonts.
-   Every color used by the app must come from these variables. */
+/* Design tokens for SPHEREx Blink: a calm scientific instrument where the
+   sky image is the hero. Dark neutral palette by default, a light palette
+   of equal quality under prefers-color-scheme, one accent (primary action
+   and active state only), semantic colors only for data states.
+   Every color used by the app comes from these variables; the contrast of
+   each text/background pair is asserted in tests/layout/tokens.test.ts. */
 :root {
   color-scheme: dark light;
 
-  /* Typography */
+  /* Typography: system stacks, 4-step scale (12 / 14 / 16 / 20 px),
+     weights 400 and 600 only. Numbers use tabular figures. */
   --font-sans:
     system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     sans-serif;
   --font-mono:
     ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
     "Liberation Mono", monospace;
-  --text-xs: 0.75rem;
-  --text-sm: 0.8125rem;
-  --text-md: 0.9375rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.375rem;
+  --text-xs: 0.75rem; /* 12px: micro-labels, captions, overlay */
+  --text-sm: 0.875rem; /* 14px: body and controls */
+  --text-md: 1rem; /* 16px: emphasis, mobile inputs (no iOS zoom) */
+  --text-lg: 1.25rem; /* 20px: state titles */
+  --weight-regular: 400;
+  --weight-strong: 600;
+  --leading: 1.5;
+  --tracking-micro: 0.06em;
 
-  /* Spacing scale */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.5rem;
-  --space-6: 2rem;
+  /* Spacing: 4/8 px grid */
+  --space-1: 0.25rem; /* 4 */
+  --space-2: 0.5rem; /* 8 */
+  --space-3: 0.75rem; /* 12 */
+  --space-4: 1rem; /* 16 */
+  --space-5: 1.5rem; /* 24 */
+  --space-6: 2rem; /* 32 */
 
-  /* Radius */
+  /* Shape */
   --radius-s: 0.25rem;
   --radius-m: 0.5rem;
   --radius-pill: 999px;
+  --hairline: 1px;
 
-  /* Motion */
+  /* Motion: 120-200 ms, removed under prefers-reduced-motion (base.css) */
   --dur-1: 120ms;
-  --dur-2: 240ms;
+  --dur-2: 180ms;
   --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
 
   /* Layout metrics */
   --target: 2.75rem; /* 44px minimum touch target */
-  --header-h: 3.5rem;
-  --panel-w: 20rem; /* 320px desktop side panel */
+  --icon: 1.125rem; /* 18px inline SVG icons */
+  --header-h: 3rem;
+  --panel-w: 22rem; /* 352px: fits 7 detector options at >= 44px each */
   --rail-w: 2.75rem; /* collapsed panel rail */
+  --drawer-w: 26rem; /* spectrum drawer beside the image (wide screens) */
+  --drawer-h: clamp(18rem, 36dvh, 24rem); /* spectrum drawer under it */
+  --plot-min-h: 15rem; /* 240px spectrum chart floor */
 
-  /* Colors — dark scheme (default) */
-  --bg: #0e1117;
-  --bg-raised: #161b24;
-  --bg-inset: #0a0d13;
-  --bg-hover: #202838;
-  --overlay: rgb(10 13 19 / 0.72);
-  --fg: #e8ecf2;
-  --fg-dim: #a9b2c3;
-  --fg-faint: #7d8798;
-  --border: #2a3242;
-  --accent: #6ea8fe;
-  --accent-fg: #0a0d13; /* text on accent background */
-  --accent-soft: #22365c; /* selected/pressed background */
-  --danger: #ff8a8a;
-  --warn: #ffb454;
-  --focus: #8fbcff;
-  --shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.45);
+  /* Colors: dark scheme (default) */
+  --bg: #0b0d10;
+  --bg-raised: #111418;
+  --bg-inset: #07090b;
+  --bg-hover: #1a1e24;
+  --fg: #e6e8eb;
+  --fg-dim: #a2a9b3;
+  --fg-faint: #858d98;
+  --border: #22272e; /* hairline */
+  --border-strong: #3a414b; /* inputs, segmented groups */
+  --accent: #8ab4f8;
+  --accent-fg: #0b0d10; /* text on accent */
+  --accent-soft: #1c2a40; /* active state background */
+  --danger: #f28b82;
+  --warn: #fdc970;
+  --focus: #8ab4f8;
+  --shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.5);
+  --band-fill: rgb(138 180 248 / 0.1);
+  --band-stroke: rgb(138 180 248 / 0.32);
+  --skel-hi: #161a1f;
+
+  /* Scrim + text drawn over the sky image. The image is data with any
+     brightness, so these stay dark/light in both schemes. */
+  --scrim: rgb(0 0 0 / 0.7);
+  --scrim-fg: #f2f4f7;
+  --scrim-warn: #fdc970;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #f4f6f9;
+    --bg: #f7f8fa;
     --bg-raised: #ffffff;
-    --bg-inset: #e9edf3;
-    --bg-hover: #e2e9f4;
-    --overlay: rgb(255 255 255 / 0.78);
-    --fg: #17202e;
-    --fg-dim: #4d5a6e;
-    --fg-faint: #5f6c7f;
-    --border: #d2dae4;
-    --accent: #1b5fd0;
+    --bg-inset: #eef0f3;
+    --bg-hover: #e9ecf0;
+    --fg: #14171c;
+    --fg-dim: #4b525c;
+    --fg-faint: #656c77;
+    --border: #e0e3e8;
+    --border-strong: #c5cad2;
+    --accent: #2858b8;
     --accent-fg: #ffffff;
-    --accent-soft: #d7e4fb;
+    --accent-soft: #e3ebfa;
     --danger: #b3261e;
-    --warn: #9a5b00;
-    --focus: #1b5fd0;
-    --shadow: 0 0.5rem 1.5rem rgb(23 32 46 / 0.18);
+    --warn: #8a5300;
+    --focus: #2858b8;
+    --shadow: 0 0.5rem 1.5rem rgb(20 23 28 / 0.14);
+    --band-fill: rgb(40 88 184 / 0.08);
+    --band-stroke: rgb(40 88 184 / 0.3);
+    --skel-hi: #f7f8fa;
   }
 }

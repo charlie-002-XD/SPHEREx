@@ -31,6 +31,10 @@ export interface UPlotOptions {
     stroke?: string;
     label?: string;
     labelFont?: string;
+    /** Space reserved for the axis label, px (uPlot axis option). */
+    labelSize?: number;
+    /** Space reserved for ticks + values, px (uPlot axis option). */
+    size?: number;
     font?: string;
     grid?: { stroke?: string; width?: number };
     ticks?: { stroke?: string; width?: number };

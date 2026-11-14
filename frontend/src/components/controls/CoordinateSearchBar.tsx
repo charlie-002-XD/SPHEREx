@@ -54,12 +54,12 @@ export function CoordinateSearchBar(props: CoordinateSearchBarProps) {
   return (
     <div className="csb" role="search" aria-label="Sky position search">
       <div className="csb-row">
-        <label className="csb-field">
-          <span>RA</span>
+        <label className="csb-field csb-ra">
+          <span className="csb-label">RA</span>
           <input
             type="text"
             inputMode="text"
-            placeholder="08h55m10.831s or 133.79"
+            placeholder="deg or hms"
             value={ra}
             onChange={(e) => setRa(e.currentTarget.value)}
             onKeyDown={onKey}
@@ -67,12 +67,12 @@ export function CoordinateSearchBar(props: CoordinateSearchBarProps) {
             aria-invalid={error !== null && parseRaToDeg(ra) === null}
           />
         </label>
-        <label className="csb-field">
-          <span>Dec</span>
+        <label className="csb-field csb-dec">
+          <span className="csb-label">Dec</span>
           <input
             type="text"
             inputMode="text"
-            placeholder="-07d14m42.53s or -7.245"
+            placeholder="deg or dms"
             value={dec}
             onChange={(e) => setDec(e.currentTarget.value)}
             onKeyDown={onKey}
@@ -81,7 +81,7 @@ export function CoordinateSearchBar(props: CoordinateSearchBarProps) {
           />
         </label>
         <label className="csb-field csb-fov">
-          <span>FOV {fov.toFixed(2)}°</span>
+          <span className="csb-label">FOV</span>
           <input
             type="range"
             min={FOV_MIN_DEG}
@@ -91,6 +91,7 @@ export function CoordinateSearchBar(props: CoordinateSearchBarProps) {
             onChange={(e) => setFov(Number(e.currentTarget.value))}
             aria-label="Field of view in degrees"
           />
+          <output className="csb-fov-val num">{fov.toFixed(2)}°</output>
         </label>
         <button
           type="button"
@@ -99,7 +100,7 @@ export function CoordinateSearchBar(props: CoordinateSearchBarProps) {
           disabled={loading}
           aria-label="Load time-lapse"
         >
-          {loading ? "…" : "Go"}
+          {loading ? "Loading…" : "Go"}
         </button>
       </div>
       {error !== null ? (
