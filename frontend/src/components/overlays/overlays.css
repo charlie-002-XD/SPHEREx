@@ -1,78 +1,74 @@
-/* Aladin catalog overlay. Token fallbacks mirror the app palette until
-   frontend/src/styles/tokens.css (f4) defines them. */
+/* Aladin catalog overlay. Tokens only (tokens.css). */
 
 .ao {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  color: var(--sx-fg, #e8e8f0);
-  font-family: system-ui, sans-serif;
-  font-size: 12px;
+  gap: var(--space-2);
+  color: var(--fg);
+  font-size: var(--text-sm);
 }
 .ao-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  padding: 0 10px;
+  gap: var(--space-2);
+  min-height: var(--target);
+  padding: 0 var(--space-3);
   align-self: flex-start;
-  font-size: 13px;
-  color: var(--sx-fg, #e8e8f0);
-  background: var(--sx-bg-panel, #14141e);
-  border: 1px solid var(--sx-border, #3a3a50);
-  border-radius: 6px;
-  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--fg);
+  background: transparent;
+  border: var(--hairline) solid var(--border-strong);
+  border-radius: var(--radius-m);
+  transition: background-color var(--dur-1) var(--ease);
 }
 .ao-toggle:hover {
-  background: var(--sx-bg-raised, #1c1c28);
+  background: var(--bg-hover);
 }
 .ao-toggle[aria-expanded="true"] {
-  border-color: var(--sx-accent, #6ea8fe);
+  border-color: var(--accent);
 }
 .ao-cats {
   display: flex;
-  gap: 14px;
+  gap: var(--space-4);
   flex-wrap: wrap;
 }
 .ao-cat {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 44px;
+  gap: var(--space-2);
+  min-height: var(--target);
   cursor: pointer;
-  color: var(--sx-fg-dim, #a0a0b8);
+  color: var(--fg-dim);
 }
 .ao-cat input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--sx-accent, #6ea8fe);
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
 }
 .ao-swatch {
-  width: 10px;
-  height: 10px;
+  width: 0.625rem;
+  height: 0.625rem;
   border-radius: 50%;
-  border: 1px solid var(--sx-border-soft, #2a2a3a);
 }
 .ao-view {
   width: 100%;
-  height: 260px;
-  border: 1px solid var(--sx-border-soft, #2a2a3a);
-  border-radius: 6px;
+  height: 16rem;
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--radius-m);
   overflow: hidden;
-  background: var(--sx-bg, #0e0e16);
+  background: var(--bg-inset);
 }
 .ao-status,
 .ao-error {
-  margin: 0;
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 .ao-status {
-  color: var(--sx-fg-dim, #a0a0b8);
+  color: var(--fg-dim);
 }
 .ao-error {
-  color: var(--sx-danger, #ff8a8a);
+  color: var(--danger);
 }
 .ao-foot {
-  font-size: 10px;
-  color: var(--sx-fg-dim, #a0a0b8);
+  font-size: var(--text-xs);
+  color: var(--fg-faint);
 }

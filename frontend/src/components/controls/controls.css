@@ -1,110 +1,210 @@
+/* Coordinate search bar + mode/detector segmented controls. Tokens only
+   (tokens.css). Every interactive element is >= 44px (--target) at every
+   breakpoint; native range tracks are 4px inside a 44px hit area. */
+
+/* ---------- coordinate search ---------- */
+
 .csb {
+  container: search / inline-size;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
-  font-size: 13px;
-  color: #e8e8f0;
+  color: var(--fg);
+  font-size: var(--text-sm);
 }
+
+/* Narrow: [RA][Dec][Go] on one row, FOV under it. Wide: one aligned row
+   [RA][Dec][FOV][Go]. */
 .csb-row {
-  display: flex;
-  gap: 8px;
-  align-items: flex-end;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-areas:
+    "ra dec go"
+    "fov fov fov";
+  gap: var(--space-2);
+  align-items: center;
 }
-.csb-field {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  flex: 1 1 130px;
-  min-width: 110px;
+.csb-ra {
+  grid-area: ra;
 }
-.csb-field span {
-  font-size: 11px;
-  color: #a0a0b8;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.csb-dec {
+  grid-area: dec;
 }
-.csb-field input[type="text"] {
-  height: 30px;
-  padding: 0 8px;
-  font: 13px/1 ui-monospace, monospace;
-  color: #e8e8f0;
-  background: #14141e;
-  border: 1px solid #3a3a50;
-  border-radius: 4px;
-}
-.csb-field input[aria-invalid="true"] {
-  border-color: #ff6b6b;
-}
-.csb-fov input[type="range"] {
-  height: 30px;
+.csb-fov {
+  grid-area: fov;
 }
 .csb-go {
-  height: 30px;
-  padding: 0 16px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #0b0b12;
-  background: #6ea8fe;
+  grid-area: go;
+}
+
+/* Field with its label drawn inside the box, left-aligned. */
+.csb-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.csb-label {
+  position: absolute;
+  left: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  pointer-events: none;
+}
+.csb-field input[type="text"] {
+  width: 100%;
+  min-width: 0;
+  height: var(--target);
+  padding: 0 var(--space-2) 0 3rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-md); /* 16px: no iOS focus zoom */
+  color: var(--fg);
+  background: var(--bg-inset);
+  border: var(--hairline) solid var(--border-strong);
+  border-radius: var(--radius-m);
+  transition: border-color var(--dur-1) var(--ease);
+}
+.csb-field input[type="text"]::placeholder {
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+.csb-field input[type="text"]:hover {
+  border-color: var(--fg-faint);
+}
+.csb-field input[type="text"]:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.csb-field input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.csb-fov {
+  gap: var(--space-3);
+  padding-left: var(--space-3);
+}
+.csb-fov .csb-label {
+  position: static;
+}
+.csb-fov input[type="range"] {
+  flex: 1 1 auto;
+}
+.csb-fov-val {
+  flex: none;
+  min-width: 3rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--fg-dim);
+  text-align: right;
+}
+
+.csb-go {
+  min-width: 4rem;
+  height: var(--target);
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-strong);
+  color: var(--accent-fg);
+  background: var(--accent);
   border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  border-radius: var(--radius-m);
+  transition: opacity var(--dur-1) var(--ease);
+}
+.csb-go:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.csb-go:active:not(:disabled) {
+  opacity: 0.76;
 }
 .csb-go:disabled {
-  opacity: 0.5;
-  cursor: default;
+  opacity: 0.55;
 }
 .csb-error {
-  margin: 0;
-  color: #ff8a8a;
-  font-size: 12px;
+  font-size: var(--text-xs);
+  color: var(--danger);
 }
+
 .csb-presets {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .csb-pill {
-  padding: 4px 10px;
-  font-size: 12px;
-  color: #d0d0e0;
-  background: #1c1c28;
-  border: 1px solid #3a3a50;
-  border-radius: 999px;
-  cursor: pointer;
+  min-height: var(--target);
+  padding: 0 var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--fg-dim);
+  background: transparent;
+  border: var(--hairline) solid var(--border-strong);
+  border-radius: var(--radius-pill);
 }
 .csb-pill:hover {
-  background: #282840;
+  color: var(--fg);
+  background: var(--bg-hover);
 }
+
+/* One aligned row once the search area itself is wide enough (container
+   query: the side panel decides how wide the view is, not the viewport). */
+@container search (min-width: 40rem) {
+  .csb-row {
+    grid-template-columns:
+      minmax(0, 1fr) minmax(0, 1fr) minmax(11rem, 1.1fr)
+      auto;
+    grid-template-areas: "ra dec fov go";
+  }
+  .csb-field input[type="text"] {
+    font-size: var(--text-sm);
+  }
+}
+
+/* ---------- mode / detector segmented controls ---------- */
+
 .ms {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 .ms-group {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  background: #14141e;
-  border: 1px solid #2a2a3a;
-  border-radius: 6px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(var(--target), 1fr);
+  border: var(--hairline) solid var(--border-strong);
+  border-radius: var(--radius-m);
+  overflow: hidden;
 }
 .ms-opt {
-  padding: 5px 10px;
-  font-size: 12px;
-  color: #a0a0b8;
+  min-width: var(--target);
+  min-height: var(--target); /* 44px at every breakpoint */
+  padding: 0 var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--fg-dim);
   background: transparent;
   border: none;
-  border-radius: 4px;
-  cursor: pointer;
   white-space: nowrap;
+  transition:
+    color var(--dur-1) var(--ease),
+    background-color var(--dur-1) var(--ease);
+}
+/* Hairline dividers between options, not boxes. */
+.ms-opt + .ms-opt {
+  border-left: var(--hairline) solid var(--border);
 }
 .ms-opt:hover {
-  color: #e8e8f0;
+  color: var(--fg);
+  background: var(--bg-hover);
 }
-.ms-on {
-  color: #ffffff;
-  background: #2d3f66;
+.ms-opt:focus-visible {
+  outline-offset: -2px;
+}
+.ms-on,
+.ms-on:hover {
+  color: var(--fg);
+  font-weight: var(--weight-strong);
+  background: var(--accent-soft);
+  box-shadow: inset 0 -2px 0 var(--accent);
 }

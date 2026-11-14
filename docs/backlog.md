@@ -12,7 +12,7 @@
 | b5-api-routes | Routes, config, static serving, limits | Devin | b1, b2, b4 | merged |
 | f5-wire-spectrum | Wire spectrum/metadata/overlay, bundle uPlot, ?mock=1 | Devin | f2, f4 | merged |
 | ops-docker-ci | Dockerfile, CI, DEPLOY.md | Devin | - | running |
-| f6-visual-polish | Elegant minimalist visual pass (design expert agent) | Opus 5.5 designer | f5 | running |
+| f6-visual-polish | Elegant minimalist visual pass (design expert agent) | Opus 5.5 designer | f5 | merged (166 FE tests) |
 | integration-live | Real-data end to end, numbers, screenshots (Opus agent) | Opus 5.5 | b5, f5 | running |
 | f4-layout-design | Minimalist responsive app shell, tokens, embed mode | Devin | f1 | merged |
 | f3-e2e-tests | Playwright (mock-mode first) | Devin | f5 | running |

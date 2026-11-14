@@ -81,6 +81,27 @@ function createMockSpectrumClient(): SpectrumClient {
   };
 }
 
+// Disclosure chevron for the collapsible panel sections.
+function GroupChevron() {
+  return (
+    <svg
+      className="app-group-chev"
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        d="M4 6l4 4 4-4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export interface AppProps {
   apiBase?: string;
   mockData?: FramesResponse;
@@ -299,10 +320,11 @@ export function App(props: AppProps) {
 
   const panel = (
     <div className="app-controls">
-      <section className="app-group" aria-labelledby="app-grp-mode">
-        <h2 className="app-group-title" id="app-grp-mode">
-          Mode &amp; detector
-        </h2>
+      <details className="app-group" open>
+        <summary className="app-group-title">
+          <h2 id="app-grp-mode">View</h2>
+          <GroupChevron />
+        </summary>
         <ModeSelector
           mode={url.mode}
           detector={detector}
@@ -311,11 +333,12 @@ export function App(props: AppProps) {
             if (p.detector !== undefined) setDetector(p.detector);
           }}
         />
-      </section>
-      <section className="app-group" aria-labelledby="app-grp-display">
-        <h2 className="app-group-title" id="app-grp-display">
-          Display
-        </h2>
+      </details>
+      <details className="app-group" open>
+        <summary className="app-group-title">
+          <h2 id="app-grp-display">Display</h2>
+          <GroupChevron />
+        </summary>
         <div className="app-fields">
           <label className="app-field">
             <span>Stretch</span>
@@ -350,21 +373,23 @@ export function App(props: AppProps) {
             </select>
           </label>
         </div>
-      </section>
-      <section className="app-group" aria-labelledby="app-grp-frame">
-        <h2 className="app-group-title" id="app-grp-frame">
-          Current frame
-        </h2>
+      </details>
+      <details className="app-group" open>
+        <summary className="app-group-title">
+          <h2 id="app-grp-frame">Current frame</h2>
+          <GroupChevron />
+        </summary>
         <FrameMetadata
           frame={currentFrame?.meta ?? null}
           unit={framesResult.response?.unit}
           flagLegend={framesResult.response?.flag_legend}
         />
-      </section>
-      <section className="app-group" aria-labelledby="app-grp-overlay">
-        <h2 className="app-group-title" id="app-grp-overlay">
-          Overlay
-        </h2>
+      </details>
+      <details className="app-group" open>
+        <summary className="app-group-title">
+          <h2 id="app-grp-overlay">Overlay</h2>
+          <GroupChevron />
+        </summary>
         <label className="app-check">
           <input
             type="checkbox"
@@ -391,51 +416,51 @@ export function App(props: AppProps) {
             </p>
           )
         ) : null}
-      </section>
+      </details>
     </div>
   );
 
   return (
-    <>
-      <AppShell
-        embed={url.embed}
-        targets={targets}
-        onSelectTarget={submitCoords}
-        search={
-          <CoordinateSearchBar
-            value={{ ra: url.ra, dec: url.dec, fov: url.fov }}
-            loading={framesResult.status === "loading"}
-            onSubmit={submitCoords}
+    <AppShell
+      embed={url.embed}
+      targets={targets}
+      onSelectTarget={submitCoords}
+      search={
+        <CoordinateSearchBar
+          value={{ ra: url.ra, dec: url.dec, fov: url.fov }}
+          loading={framesResult.status === "loading"}
+          onSubmit={submitCoords}
+        />
+      }
+      panel={panel}
+      drawer={
+        spec.open ? (
+          <SpectrumPanel
+            open={spec.open}
+            status={spec.status}
+            spectrum={spec.data}
+            error={spec.error}
+            raDeg={spec.raDeg}
+            decDeg={spec.decDeg}
+            aperturePx={spec.aperturePx}
+            onApertureChange={spec.setAperture}
+            onClose={spec.close}
           />
-        }
-        panel={panel}
-      >
-        <Explorer
-          key={retryNonce}
-          apiBase={apiBase}
-          url={url}
-          setUrl={setUrl}
-          detector={detector}
-          embed={url.embed}
-          mockData={mockData}
-          onPick={spec.requestAt}
-          onResult={setFramesResult}
-          onRetry={() => setRetryNonce((n) => n + 1)}
-        />
-      </AppShell>
-      {!url.embed ? (
-        <SpectrumPanel
-          open={spec.open}
-          status={spec.status}
-          spectrum={spec.data}
-          error={spec.error}
-          raDeg={spec.raDeg}
-          decDeg={spec.decDeg}
-          aperturePx={spec.aperturePx}
-          onApertureChange={spec.setAperture}
-          onClose={spec.close}
-        />
-      ) : null}
-    </>
+        ) : null
+      }
+    >
+      <Explorer
+        key={retryNonce}
+        apiBase={apiBase}
+        url={url}
+        setUrl={setUrl}
+        detector={detector}
+        embed={url.embed}
+        mockData={mockData}
+        onPick={spec.requestAt}
+        onResult={setFramesResult}
+        onRetry={() => setRetryNonce((n) => n + 1)}
+      />
+    </AppShell>
   );
 }

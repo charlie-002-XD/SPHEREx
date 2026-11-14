@@ -16,17 +16,26 @@ body,
   height: 100%;
 }
 
-/* `html body` (two elements) so this wins over the hardcoded dark body rule
-   in f1's viewer.css regardless of stylesheet order. */
+/* `html body` (two elements) keeps this above any component-level body
+   rule regardless of stylesheet order. */
 html body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-sans);
-  font-size: var(--text-md);
-  line-height: 1.5;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading);
   /* The app shell fills the viewport and owns every scrollable region. */
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+h3 {
+  font-size: inherit;
+  font-weight: var(--weight-strong);
 }
 
 img,
@@ -50,6 +59,9 @@ summary,
 select {
   cursor: pointer;
 }
+button:disabled {
+  cursor: default;
+}
 
 summary {
   list-style: none;
@@ -58,10 +70,74 @@ summary::-webkit-details-marker {
   display: none;
 }
 
+/* Numbers (coordinates, wavelengths, times, counters) never jitter. */
+.num,
+input[type="text"],
+output {
+  font-variant-numeric: tabular-nums;
+}
+
 input[type="checkbox"],
-input[type="radio"],
-input[type="range"] {
+input[type="radio"] {
   accent-color: var(--accent);
+}
+
+/* ---------- range slider: hairline track, round thumb ---------- */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  height: var(--target); /* touch area; the visible track is 4px */
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 0.25rem;
+  border-radius: var(--radius-pill);
+  background: var(--border-strong);
+}
+input[type="range"]::-moz-range-track {
+  height: 0.25rem;
+  border-radius: var(--radius-pill);
+  background: var(--border-strong);
+}
+input[type="range"]::-moz-range-progress {
+  height: 0.25rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-top: -0.3125rem;
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  background: var(--fg);
+  transition: transform var(--dur-1) var(--ease);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  background: var(--fg);
+}
+input[type="range"]:hover:not(:disabled)::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  background: var(--accent);
+}
+input[type="range"]:focus-visible::-moz-range-thumb {
+  background: var(--accent);
 }
 
 ::selection {
@@ -79,7 +155,7 @@ input[type="range"] {
   border-radius: var(--radius-s);
 }
 input[type="range"]:focus-visible {
-  outline-offset: 4px;
+  outline-offset: -2px;
 }
 
 .visually-hidden {

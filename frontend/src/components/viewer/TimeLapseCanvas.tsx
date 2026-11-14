@@ -38,6 +38,22 @@ export interface TimeLapseCanvasProps {
   embed?: boolean;
 }
 
+// 16px stroke icon for the transport buttons (inline SVG, no icon font).
+function Icon(props: { d: string; fill?: boolean }) {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path
+        d={props.d}
+        fill={props.fill === true ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function TimeLapseCanvas(props: TimeLapseCanvasProps) {
   const { frames, transport, onTransport, embed = false } = props;
   const n = frames.length;
@@ -203,48 +219,65 @@ export function TimeLapseCanvas(props: TimeLapseCanvasProps) {
               aria-label={ariaFrame}
             />
             <div className="tl-overlay" aria-hidden="true">
-              <span>{mjdToIso(meta?.obs_mjd_start ?? NaN)}</span>
-              <span>D{meta?.detector ?? "?"}</span>
-              <span>
-                {meta !== undefined ? `${meta.wavelength_um.toFixed(2)} µm` : ""}
+              <span className="tl-chip num">
+                {mjdToIso(meta?.obs_mjd_start ?? NaN)}
               </span>
-              <span>
-                {displayIndex + 1}/{n}
-                {transport.blink ? (blinkPhase === 0 ? " ·A" : " ·B") : ""}
+              <span className="tl-chip num">
+                D{meta?.detector ?? "?"}
+                {meta !== undefined
+                  ? ` · ${meta.wavelength_um.toFixed(2)} µm`
+                  : ""}
               </span>
+              {transport.blink ? (
+                <span className="tl-chip tl-chip-blink">
+                  {blinkPhase === 0 ? "A" : "B"}
+                </span>
+              ) : null}
               {meta !== undefined && (meta.flags?.length ?? 0) > 0 ? (
-                <span className="tl-flag">{meta.flags?.join(", ")}</span>
+                <span className="tl-chip tl-flag">{meta.flags?.join(", ")}</span>
               ) : null}
             </div>
           </>
         )}
       </div>
       <div className="tl-transport">
-        <button
-          type="button"
-          aria-label="Previous frame"
-          onClick={() => step(-1)}
-          disabled={n === 0}
-        >
-          ⟨
-        </button>
-        <button
-          type="button"
-          aria-label={transport.playing ? "Pause" : "Play"}
-          aria-pressed={transport.playing}
-          onClick={() => onTransport({ playing: !transport.playing })}
-          disabled={n === 0}
-        >
-          {transport.playing ? "❚❚" : "▶"}
-        </button>
-        <button
-          type="button"
-          aria-label="Next frame"
-          onClick={() => step(1)}
-          disabled={n === 0}
-        >
-          ⟩
-        </button>
+        <div className="tl-play">
+          <button
+            type="button"
+            className="tl-btn"
+            aria-label="Previous frame"
+            title="Previous frame (Left arrow)"
+            onClick={() => step(-1)}
+            disabled={n === 0}
+          >
+            <Icon d="M10 4L6 8l4 4" />
+          </button>
+          <button
+            type="button"
+            className="tl-btn tl-btn-play"
+            aria-label={transport.playing ? "Pause" : "Play"}
+            aria-pressed={transport.playing}
+            title={transport.playing ? "Pause (Space)" : "Play (Space)"}
+            onClick={() => onTransport({ playing: !transport.playing })}
+            disabled={n === 0}
+          >
+            {transport.playing ? (
+              <Icon d="M6 4v8M10 4v8" />
+            ) : (
+              <Icon d="M5.5 3.5v9l7-4.5z" fill />
+            )}
+          </button>
+          <button
+            type="button"
+            className="tl-btn"
+            aria-label="Next frame"
+            title="Next frame (Right arrow)"
+            onClick={() => step(1)}
+            disabled={n === 0}
+          >
+            <Icon d="M6 4l4 4-4 4" />
+          </button>
+        </div>
         <input
           type="range"
           className="tl-scrubber"
@@ -258,19 +291,25 @@ export function TimeLapseCanvas(props: TimeLapseCanvasProps) {
           }
           disabled={n === 0}
         />
+        <output className="tl-count" aria-hidden="true">
+          {displayIndex + 1}
+          <span className="tl-count-of">/{n}</span>
+        </output>
         {!embed ? (
-          <>
+          <div className="tl-aux">
             <button
               type="button"
+              className="tl-btn"
               aria-label="Toggle loop"
               aria-pressed={transport.loop}
               title="Loop (L)"
               onClick={() => onTransport({ loop: !transport.loop })}
             >
-              ∞
+              <Icon d="M3 7V6a2 2 0 0 1 2-2h7l-2-2M13 9v1a2 2 0 0 1-2 2H4l2 2" />
             </button>
             <button
               type="button"
+              className="tl-btn tl-btn-text"
               aria-label="Toggle blink comparator"
               aria-pressed={transport.blink}
               title="Blink A/B (B)"
@@ -281,6 +320,7 @@ export function TimeLapseCanvas(props: TimeLapseCanvasProps) {
             {transport.blink ? (
               <button
                 type="button"
+                className="tl-btn tl-btn-text num"
                 aria-label="Set blink reference to current frame"
                 title="Anchor frame A to the current frame"
                 onClick={() => setBlinkA(frameIndex)}
@@ -289,7 +329,7 @@ export function TimeLapseCanvas(props: TimeLapseCanvasProps) {
               </button>
             ) : null}
             <label className="tl-fps">
-              <span className="tl-fps-label">{transport.fps} fps</span>
+              <span className="tl-fps-label num">{transport.fps} fps</span>
               <input
                 type="range"
                 aria-label="Playback speed"
@@ -302,7 +342,7 @@ export function TimeLapseCanvas(props: TimeLapseCanvasProps) {
                 }
               />
             </label>
-          </>
+          </div>
         ) : null}
       </div>
       <span className="tl-sr" role="status" aria-live="polite">

@@ -187,3 +187,127 @@ describe("responsive CSS guards (static assertions for 375px)", () => {
     expect(BASE_CSS).toContain("focus-visible");
   });
 });
+
+// f6 visual-polish regressions: the four PM defects (D-016, D-019).
+const SPECTRUM_CSS = readFileSync(
+  `${SRC}components/spectrum/spectrum.css`,
+  "utf8",
+);
+const CONTROLS_CSS = readFileSync(
+  `${SRC}components/controls/controls.css`,
+  "utf8",
+);
+
+function remToPx(v: string): number {
+  const m = /([\d.]+)(rem|px)/.exec(v);
+  if (m === null) return NaN;
+  return m[2] === "rem" ? Number(m[1]) * 16 : Number(m[1]);
+}
+
+// Bodies of every @media / @container block (balanced braces).
+function atRuleBlocks(css: string): string[] {
+  const out: string[] = [];
+  for (const m of css.matchAll(/@(?:media|container)[^{]*\{/g)) {
+    let depth = 1;
+    const start = (m.index ?? 0) + m[0].length;
+    let i = start;
+    for (; i < css.length && depth > 0; i++) {
+      if (css[i] === "{") depth++;
+      if (css[i] === "}") depth--;
+    }
+    out.push(css.slice(start, i));
+  }
+  return out;
+}
+
+function rule(css: string, selector: string): string {
+  const i = css.indexOf(`${selector} {`);
+  if (i < 0) return "";
+  return css.slice(i, css.indexOf("}", i));
+}
+
+describe("defect 1: spectrum panel is docked, never covering controls", () => {
+  it("renders the drawer inside the view, after the image", () => {
+    stubMatchMedia(true);
+    const html = renderToStaticMarkup(
+      <AppShell
+        embed={false}
+        targets={[]}
+        onSelectTarget={() => {}}
+        search={<div className="fake-search">search</div>}
+        panel={<div className="fake-panel">panel</div>}
+        drawer={<div className="fake-drawer">spectrum</div>}
+      >
+        <div className="fake-viewer">viewer</div>
+      </AppShell>,
+    );
+    expect(html).toContain("app-view app-view-drawer");
+    const view = html.indexOf("app-view");
+    const main = html.indexOf("app-main");
+    const drawer = html.indexOf("app-drawer");
+    const panel = html.indexOf("app-panel");
+    expect(view).toBeLessThan(main);
+    expect(main).toBeLessThan(drawer);
+    // The drawer closes before the controls panel column starts.
+    expect(drawer).toBeLessThan(panel);
+  });
+
+  it("omits the drawer wrapper when the spectrum is closed", () => {
+    stubMatchMedia(true);
+    const html = renderShell();
+    expect(html).not.toContain("app-drawer");
+    expect(html).not.toContain("app-view-drawer");
+  });
+
+  it("never positions the spectrum panel as a fixed overlay", () => {
+    expect(SPECTRUM_CSS).not.toMatch(/position:\s*fixed/);
+    expect(SHELL_CSS).not.toMatch(/position:\s*fixed/);
+  });
+});
+
+describe("defect 2: spectrum chart fills the panel with a >= 220px floor", () => {
+  it("defines a chart floor token >= 220px and uses it", () => {
+    const m = /--plot-min-h:\s*([^;]+);/.exec(TOKENS_CSS);
+    expect(m).not.toBeNull();
+    expect(remToPx(m?.[1] ?? "")).toBeGreaterThanOrEqual(220);
+    expect(rule(SPECTRUM_CSS, ".sp-plot")).toContain(
+      "min-height: var(--plot-min-h)",
+    );
+    // The chart is sized from its host (no feedback growth loop).
+    expect(SPECTRUM_CSS).toContain(".sp-plot > .uplot");
+  });
+});
+
+describe("defect 3: segmented buttons are >= 44px at every breakpoint", () => {
+  it("sizes segmented options with the touch-target token", () => {
+    const opt = rule(CONTROLS_CSS, ".ms-opt");
+    expect(opt).toContain("min-height: var(--target)");
+    expect(opt).toContain("min-width: var(--target)");
+  });
+
+  it("has no breakpoint or bridge rule shrinking them", () => {
+    expect(SHELL_CSS).not.toContain(".ms-opt");
+    for (const block of atRuleBlocks(CONTROLS_CSS)) {
+      expect(block).not.toContain(".ms-opt");
+    }
+  });
+});
+
+describe("defect 4: balanced mobile layout", () => {
+  const mobile = SHELL_CSS.split("@media (min-width: 640px)")[0] ?? "";
+
+  it("orders image, spectrum, search, sheet on phones", () => {
+    expect(rule(mobile, ".app-main")).toContain("order: -1");
+    expect(rule(mobile, ".app-drawer")).toContain("order: -1");
+    expect(rule(mobile, ".app-search")).not.toContain("order");
+  });
+
+  it("keeps a square image floor on phones", () => {
+    expect(mobile).toContain("min-height: min(calc(100vw - 2 * var(--gutter))");
+  });
+
+  it("uses a compact two-row search: [RA][Dec][Go] then FOV", () => {
+    expect(CONTROLS_CSS).toContain('"ra dec go"');
+    expect(CONTROLS_CSS).toContain('"fov fov fov"');
+  });
+});

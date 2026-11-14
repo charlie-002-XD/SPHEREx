@@ -5,16 +5,16 @@ import "./controls.css";
 
 const MODE_LABELS: Record<ApiMode, string> = {
   raw: "Raw",
-  diff: "Diff t₂−t₁",
-  coadd: "Co-add t₂+t₁",
-  stack: "Det stack",
+  diff: "Diff",
+  coadd: "Co-add",
+  stack: "Stack",
 };
 
 const MODE_HINTS: Record<ApiMode, string> = {
   raw: "Observed frames as delivered",
-  diff: "Each frame minus the first frame of its detector group",
-  coadd: "Running co-addition against the first frame",
-  stack: "Per-detector-array co-added stacks",
+  diff: "Difference t₂ − t₁: each frame minus the first frame of its detector group",
+  coadd: "Co-add t₂ + t₁: running co-addition against the first frame",
+  stack: "Detector stack: per-detector-array co-added stacks",
 };
 
 export interface ModeSelectorProps {
@@ -28,7 +28,7 @@ export function ModeSelector(props: ModeSelectorProps) {
   return (
     <div className="ms">
       <div
-        className="ms-group"
+        className="ms-group ms-modes"
         role="radiogroup"
         aria-label="Display mode"
       >
@@ -47,7 +47,7 @@ export function ModeSelector(props: ModeSelectorProps) {
         ))}
       </div>
       <div
-        className="ms-group"
+        className="ms-group ms-dets"
         role="radiogroup"
         aria-label="Detector filter"
       >
@@ -56,6 +56,7 @@ export function ModeSelector(props: ModeSelectorProps) {
           role="radio"
           aria-checked={detector === null}
           className={detector === null ? "ms-opt ms-on" : "ms-opt"}
+          title="All detector arrays"
           onClick={() => onChange({ detector: null })}
         >
           All
@@ -67,6 +68,7 @@ export function ModeSelector(props: ModeSelectorProps) {
             role="radio"
             aria-checked={detector === d}
             className={detector === d ? "ms-opt ms-on" : "ms-opt"}
+            title={`Detector array ${d}`}
             onClick={() => onChange({ detector: d })}
           >
             D{d}

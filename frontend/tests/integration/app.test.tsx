@@ -74,6 +74,14 @@ describe("App integration", () => {
       name: "Spectrum panel",
     });
     expect(panel).toBeTruthy();
+    // Docked into the layout (f6): inside the view column, never a sibling
+    // overlay, and it contains none of the search/transport controls.
+    expect(panel.closest(".app-view")).not.toBeNull();
+    expect(panel.closest(".app-drawer")).not.toBeNull();
+    const go = screen.getByRole("button", { name: "Load time-lapse" });
+    const play = screen.getByRole("button", { name: "Play" });
+    expect(panel.contains(go)).toBe(false);
+    expect(panel.contains(play)).toBe(false);
     // Mock spectrum resolves; the summary lists the usable point count.
     await screen.findByText(/\d+ points/);
     // Closing returns to the viewer.
