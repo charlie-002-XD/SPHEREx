@@ -5,3 +5,4 @@
 - Does `fitrs` read the tile-compressed FLAGS HDU? If not, decompression strategy. [Devin b3, report in handoff]
 - Is the IRSA 503-at-4-concurrent report true? [measure live once, record in facts.md]
 - Hosting target for the public URL and domain eligibility. [user]
+- Cutout size unit: RESOLVED. size/center default to degrees; units px/arcsec/arcmin/deg/rad accepted; one value = square (https://irsa.ipac.caltech.edu/ibe/cutouts.html). Use size=<fov_deg>deg. [closed]

@@ -23,3 +23,9 @@ b1-validation, b3-fits-parser, f1-viewer in parallel (disjoint scopes). Merge on
 
 ## D-008 (2026-11-14) Vault and skills
 All agents read `docs/vault/` first and write `docs/vault/handoffs/<task>.md` last. Plugin skills: `context-vault`, `wave-orchestration`.
+
+## D-009 (2026-11-14) Devin first, Claude as fallback
+All implementation tasks go to Devin. If Devin is unavailable (quota/credits exhausted, auth or service errors, run exits non-zero without commits), Claude implements the task itself in the same worktree/branch and scope, then hands control back to Devin when it recovers. Same gates and handoff apply. Source: user instruction 2026-11-14.
+
+## D-010 (2026-11-14) Claude is PM/PO only; never implements
+Supersedes the Claude-implements half of D-009. Claude decides, dispatches, reviews, merges and updates the vault. All code is written by agents: Devin first; if Devin is unavailable, spawn a general-purpose subagent (Agent tool) on the same worktree, branch, scope and gates. Source: user instruction 2026-11-14.
