@@ -53,3 +53,6 @@ New agent spherex-complex-engineer (model claude-opus-5-5, plugin agents/ and re
 
 ## D-018 (2026-11-14) integration-live delegated to Opus
 Reason per policy: spans backend and frontend, needs real IRSA data and numeric verification of WCS alignment and proper-motion displacement. Branch opus/integration-live.
+
+## D-019 (2026-11-14) UI must be English; spectrum panel overlap found
+UI text verified English (lang=en, no Spanish strings). Review of mock UI at 1440 px with spectrum open: the fixed SpectrumPanel covers the Go button and controls panel; chart too short; segmented buttons 40 px. Sent to the Opus integration agent to fix inside integration-live.
