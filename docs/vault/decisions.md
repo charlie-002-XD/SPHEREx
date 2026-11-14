@@ -56,3 +56,6 @@ Reason per policy: spans backend and frontend, needs real IRSA data and numeric 
 
 ## D-019 (2026-11-14) UI must be English; spectrum panel overlap found
 UI text verified English (lang=en, no Spanish strings). Review of mock UI at 1440 px with spectrum open: the fixed SpectrumPanel covers the Go button and controls panel; chart too short; segmented buttons 40 px. Sent to the Opus integration agent to fix inside integration-live.
+
+## D-020 (2026-11-14) Frontend design expert agent owns visuals
+New agent spherex-frontend-designer (claude-opus-5-5) and skill minimal-ui-design. Task f6-visual-polish owns all CSS, layout and visual placement; the integration-live Opus agent keeps backend/data/logic and is told not to touch visuals. Branch opus/f6-visual-polish. Source: user instruction 2026-11-14.
