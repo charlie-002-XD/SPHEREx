@@ -18,3 +18,4 @@ Public web tool: enter RA/Dec, see a time-lapse of SPHEREx images of that patch.
 8. No NASA logos or branding in anything generated. Cite every library and data source (see `docs/REFERENCES.md`).
 9. Commit on your own branch, never push. End commit messages with `Generated-by: Devin (SI-assisted)` when Devin wrote them, and record SI-generated parts in `SI_USAGE.md`.
 10. Unit tests use synthetic data; no test may call the real IRSA unless tagged live and opt-in.
+11. UI: mobile-first, responsive (375 px to desktop, also inside iframes) and minimalist. Image is the hero; secondary controls in a collapsible panel (bottom sheet on mobile, slim side panel on desktop). Dark neutral palette + one accent, CSS variables, system fonts, no UI framework, touch targets >= 44 px, respect `prefers-reduced-motion` and `prefers-color-scheme`, WCAG AA contrast. See `frontend/src/styles/tokens.css` once it exists.

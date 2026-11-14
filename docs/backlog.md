@@ -11,6 +11,7 @@
 | f2-spectrum | Spectrum panel, flags, Aladin | Devin | f1 | todo |
 | b5-api-routes | Routes, config, static serving, limits | Devin | b1, b2, b4 | todo |
 | integration | Frontend <-> backend, real WISE 0855 | Claude | b5, f1, f2 | todo |
+| f4-layout-design | Minimalist responsive app shell, tokens, embed mode | Devin | f1 | todo |
 | f3-e2e-tests | Playwright | Devin | integration | todo |
 | deploy | Dockerfile, CI, hosting, warm-up, FortiGuard | Claude | integration | todo |
 | submission | README, SI_USAGE, REFERENCES, demo (<=30 s / <=7 slides), submit | all | deploy | todo |
