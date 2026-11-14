@@ -1,15 +1,9 @@
-// Lazy loader + minimal typings for uPlot, loaded once from a pinned CDN URL.
-// package.json is outside this task's scope, so uPlot is not an npm dep:
-// https://cdn.jsdelivr.net/npm/uplot@1.6.32 (MIT, Leon Sorokin). Subresource
-// integrity hashes pin the exact bytes. To vendor it later: `npm i uplot`
-// and replace loadUPlot() with a static import.
+// Lazy loader + minimal typings for uPlot, bundled as an npm dependency
+// (uplot@1.6.32, MIT, Leon Sorokin). The library and its stylesheet are
+// loaded on first use via dynamic import() so they stay out of the main
+// bundle; no CDN or SRI is involved at runtime.
 
 export const UPLOT_VERSION = "1.6.32";
-const UPLOT_BASE = `https://cdn.jsdelivr.net/npm/uplot@${UPLOT_VERSION}/dist`;
-const UPLOT_JS_URL = `${UPLOT_BASE}/uPlot.iife.min.js`;
-const UPLOT_CSS_URL = `${UPLOT_BASE}/uPlot.min.css`;
-const UPLOT_JS_SRI = "sha384-Gx3t0zdBAuQOuvvmaLZj7HKEiSgWTAs+VdtNY7wt19QDPTDQjFIwAuXDj0zeN00c";
-const UPLOT_CSS_SRI = "sha384-IfV0B7MIOYuO95kO9G5ySKPz/85zqFNOAs8iy4tkK5zd9izhJAB8b7lHrwYqqmYE";
 
 export type UPlotData = Array<Array<number | null>>;
 export type UPlotHook = (u: UPlotInstance) => void;
@@ -59,39 +53,22 @@ export type UPlotConstructor = new (
   el: HTMLElement,
 ) => UPlotInstance;
 
-function injectCss(): void {
-  if (document.querySelector(`link[href="${UPLOT_CSS_URL}"]`) !== null) return;
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = UPLOT_CSS_URL;
-  link.integrity = UPLOT_CSS_SRI;
-  link.crossOrigin = "anonymous";
-  document.head.appendChild(link);
-}
-
 let pending: Promise<UPlotConstructor> | null = null;
 
+// Resolves to the uPlot constructor. The package's own typings are much
+// wider than the minimal surface the panel uses, so the module is cast to
+// the local UPlotConstructor — the call sites keep the same typed API.
 export function loadUPlot(): Promise<UPlotConstructor> {
-  const globalCtor = (window as unknown as { uPlot?: UPlotConstructor }).uPlot;
-  if (globalCtor !== undefined) return Promise.resolve(globalCtor);
   if (pending !== null) return pending;
-  pending = new Promise<UPlotConstructor>((resolve, reject) => {
-    injectCss();
-    const script = document.createElement("script");
-    script.src = UPLOT_JS_URL;
-    script.integrity = UPLOT_JS_SRI;
-    script.crossOrigin = "anonymous";
-    script.async = true;
-    script.onload = () => {
-      const ctor = (window as unknown as { uPlot?: UPlotConstructor }).uPlot;
-      if (ctor !== undefined) resolve(ctor);
-      else reject(new Error("uPlot loaded but window.uPlot is missing"));
-    };
-    script.onerror = () => reject(new Error("failed to load uPlot"));
-    document.head.appendChild(script);
-  });
-  pending.catch(() => {
-    pending = null; // allow retry after a failed load
-  });
+  pending = Promise.all([
+    import("uplot"),
+    import("uplot/dist/uPlot.min.css"),
+  ]).then(
+    ([mod]) => mod.default as unknown as UPlotConstructor,
+    (err: unknown) => {
+      pending = null; // allow retry after a failed load
+      throw err instanceof Error ? err : new Error("failed to load uPlot");
+    },
+  );
   return pending;
 }

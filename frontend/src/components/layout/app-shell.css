@@ -116,10 +116,15 @@
   flex-direction: column;
   min-height: 0;
   min-width: 0;
+  /* On mobile the open bottom sheet can exceed the space left by the
+     viewer; scroll the body region instead of crushing the image to 0. */
+  overflow-y: auto;
 }
 
 .app-view {
-  flex: 1;
+  /* flex-basis auto: the view never shrinks below its own content, so the
+     hero image keeps a usable floor when the sheet is open on mobile. */
+  flex: 1 0 auto;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -133,7 +138,9 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  /* Floor on mobile so the cutout (and click-to-spectrum) stays usable
+     while the bottom sheet is open; reset in the desktop layer. */
+  min-height: 15rem;
   min-width: 0;
   padding: var(--space-3) var(--space-4);
 }
@@ -244,6 +251,30 @@
   flex: none;
   font-size: var(--text-xs);
   color: var(--fg-dim);
+}
+
+/* Wrapper that carries the click-to-spectrum handler; fills .app-main so
+   the viewer keeps its height. */
+.app-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Checkbox rows inside the secondary-controls panel (overlay toggle). */
+.app-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--target);
+  font-size: var(--text-sm);
+  color: var(--fg);
+}
+.app-check input {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
 }
 
 /* ---------- full-area states (empty / loading / error) ---------- */
@@ -363,6 +394,7 @@
 }
 .app .tl-canvas {
   object-fit: contain; /* letterbox instead of stretching the cutout */
+  cursor: crosshair; /* hint: click samples a spectrum */
 }
 .app .tl-overlay {
   background: var(--overlay);
@@ -476,9 +508,14 @@
 @media (min-width: 640px) {
   .app-body {
     flex-direction: row;
+    overflow-y: hidden;
+  }
+  .app-view {
+    flex: 1; /* shrink to the space left by the side panel */
   }
   .app-main {
     order: 0; /* DOM order: search above the image on wide screens */
+    min-height: 0;
   }
   .app-search {
     border-top: none;
