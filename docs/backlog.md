@@ -16,6 +16,7 @@
 | f4-layout-design | Minimalist responsive app shell, tokens, embed mode | Devin | f1 | merged |
 | f3-e2e-tests | Playwright | Devin | integration | todo |
 | deploy | Dockerfile, CI, hosting, warm-up, FortiGuard | Claude | integration | todo |
+| submission-docs | README, project-page text, slides, video script, checklist | Devin | - | running |
 | submission | README, SI_USAGE, REFERENCES, demo (<=30 s / <=7 slides), submit | all | deploy | todo |
 | study | Team study collection in app.haiku.ac (content to confirm) | Claude | - | todo |
 
