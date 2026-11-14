@@ -44,3 +44,6 @@ Live IRSA confirmed: 503 'Server busy' is real (retries mandatory) and 422 'Arra
 
 ## D-015 (2026-11-14) Remote configured, nothing is pushed
 origin = https://github.com/Luis000923/SPHEREx.git, added as a local git config only. No push, fetch or any network git operation until the user explicitly asks. Devin tasks already forbid pushing. CI workflow stays untriggered while nothing is pushed. Source: user instruction 2026-11-14.
+
+## D-016 (2026-11-14) Visual review of mock UI (PM)
+Checked ?mock=1 in Chrome at 375, 768 and 1440 px: no horizontal overflow, image is the hero, controls collapse into a bottom sheet on mobile and a side panel from 640 px, all touch targets >= 44 px at 375 px. Minor: segmented mode/detector buttons are 40 px tall at >= 640 px (below the 44 px rule); fix in polish if time allows. Mobile order is image, transport, search, sheet handle (acceptable, thumb-friendly). Not yet reviewed with real data or the spectrum panel open.
