@@ -41,3 +41,6 @@ f2 loads uPlot 1.6.32 (SRI) from jsDelivr at runtime and Aladin Lite from a CDN.
 
 ## D-014 (2026-11-14) b2 merged; API defaults for responsiveness
 Live IRSA confirmed: 503 'Server busy' is real (retries mandatory) and 422 'Arrays do not overlap' occurs when SIA footprint covers a point but the array does not (cutout skipped, partial results). IRSA can take minutes for 60 frames, so contract max_frames default is now 24 (max 60) and the API has a total deadline (REQUEST_DEADLINE_SECS=40) returning partial frames with truncated=true. Output images capped at OUTPUT_NPIX=192.
+
+## D-015 (2026-11-14) Remote configured, nothing is pushed
+origin = https://github.com/Luis000923/SPHEREx.git, added as a local git config only. No push, fetch or any network git operation until the user explicitly asks. Devin tasks already forbid pushing. CI workflow stays untriggered while nothing is pushed. Source: user instruction 2026-11-14.
