@@ -261,20 +261,25 @@ export function EpochComparator(props: EpochComparatorProps) {
           ))}
         </div>
 
-        {props.findings.map((f) => (
-          <span
-            key={f.id}
-            className={
-              f.band === band.id ? "cmp-marker" : "cmp-marker cmp-marker-dim"
-            }
-            style={{
-              left: `${((f.x + 0.5) / width) * 100}%`,
-              top: `${((f.y + 0.5) / height) * 100}%`,
-            }}
-            title={`(${f.x}, ${f.y}) · ${f.kind} · epoch ${f.epoch}`}
-            aria-hidden="true"
-          />
-        ))}
+        {props.findings
+          .filter(
+            (f) =>
+              f.frame_id === pair.a.meta.id || f.frame_id === pair.b?.meta.id,
+          )
+          .map((f) => (
+            <span
+              key={f.id}
+              className={
+                f.band === band.id ? "cmp-marker" : "cmp-marker cmp-marker-dim"
+              }
+              style={{
+                left: `${((f.x + 0.5) / width) * 100}%`,
+                top: `${((f.y + 0.5) / height) * 100}%`,
+              }}
+              title={`(${f.x}, ${f.y}) · ${f.kind} · epoch ${f.epoch}`}
+              aria-hidden="true"
+            />
+          ))}
 
         {props.pending !== null ? (
           <span
