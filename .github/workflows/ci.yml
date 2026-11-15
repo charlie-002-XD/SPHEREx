@@ -50,8 +50,9 @@ jobs:
       - run: npm run build
 
   docker:
-    name: Docker image build (no push)
+    name: Docker image build + smoke (no push)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t spherex-blink:ci .
+      - run: scripts/docker-smoke.sh spherex-blink:ci
