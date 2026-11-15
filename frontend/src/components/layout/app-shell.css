@@ -45,6 +45,12 @@
   height: var(--icon);
   color: var(--accent);
 }
+/* Right side of the header: target menu + quiet actions (About). */
+.app-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
 
 /* ---------- target preset menu ---------- */
 
