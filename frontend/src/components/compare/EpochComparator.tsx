@@ -224,16 +224,21 @@ export function EpochComparator(props: EpochComparatorProps) {
           role="img"
           aria-label={`Epoch A, ${band.label} ${band.centerUm.toFixed(1)} micrometers, observed ${dateA}`}
         />
-        {hasB ? (
-          <canvas
-            ref={canvasB}
-            className={
-              showB ? "cmp-canvas cmp-b" : "cmp-canvas cmp-b cmp-hidden"
-            }
-            role="img"
-            aria-label={`Epoch B, ${band.label}, observed ${dateB ?? "—"}`}
-          />
-        ) : null}
+        {/* Always mounted so its renderer survives band switches that
+            temporarily have no epoch B. */}
+        <canvas
+          ref={canvasB}
+          className={
+            hasB && showB ? "cmp-canvas cmp-b" : "cmp-canvas cmp-b cmp-hidden"
+          }
+          role={hasB ? "img" : undefined}
+          aria-hidden={hasB ? undefined : true}
+          aria-label={
+            hasB
+              ? `Epoch B, ${band.label}, observed ${dateB ?? "—"}`
+              : undefined
+          }
+        />
 
         <div className="cmp-grid" aria-hidden="true">
           {ticks.map((k) => (
