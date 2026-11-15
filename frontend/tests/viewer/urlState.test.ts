@@ -24,7 +24,7 @@ describe("parseUrlState", () => {
       fps: 12,
       frame: 7,
       embed: true,
-      view: "timelapse",
+      view: "compare",
       band: "b2",
     });
   });

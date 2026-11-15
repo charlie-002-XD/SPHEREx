@@ -44,9 +44,14 @@ import { makeMockSpectrum } from "./components/spectrum/mockSpectrum";
 import { FrameMetadata } from "./components/metadata/FrameMetadata";
 import { CompareView } from "./components/compare/CompareView";
 import { BandSelector } from "./components/compare/BandSelector";
-import { FindingsList } from "./components/compare/FindingsList";
+import { ReportPanel } from "./components/compare/ReportPanel";
 import type { PendingMark } from "./components/compare/EpochComparator";
-import { bandById, bandFrameCounts, selectEpochPair } from "./lib/bands";
+import {
+  bandById,
+  bandFrameCounts,
+  formatDeltaT,
+  selectEpochPair,
+} from "./lib/bands";
 import {
   createLocalFindingsClient,
   type Finding,
@@ -161,7 +166,6 @@ interface ExplorerProps {
   findings: readonly Finding[];
   pending: PendingMark | null;
   onMark: (m: PendingMark | null) => void;
-  onSaveFinding: (kind: FindingKind, note: string) => Promise<Finding>;
   onResult: (r: FramesResult) => void;
   onRetry: () => void;
 }
@@ -275,8 +279,6 @@ function Explorer(props: ExplorerProps) {
           findings={props.findings}
           pending={props.pending}
           onMark={props.onMark}
-          onSave={props.onSaveFinding}
-          onSpectrum={props.onPick}
         />
       ) : (
         <div
@@ -353,6 +355,13 @@ export function App(props: AppProps) {
   );
   const [findings, setFindings] = useState<readonly Finding[]>([]);
   const [pending, setPending] = useState<PendingMark | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (toast === null) return;
+    const id = window.setTimeout(() => setToast(null), 3000);
+    return () => window.clearTimeout(id);
+  }, [toast]);
 
   useEffect(() => {
     let alive = true;
@@ -385,6 +394,7 @@ export function App(props: AppProps) {
       });
       setFindings((prev) => [...prev, f]);
       setPending(null);
+      setToast(`Finding saved at (${f.x}, ${f.y}).`);
       return f;
     },
     [findingsClient, pending],
@@ -438,14 +448,16 @@ export function App(props: AppProps) {
     frames[Math.min(Math.max(url.frame, 0), Math.max(frames.length - 1, 0))] ??
     null;
 
+  const comparePair = useMemo(() => {
+    const band = bandById(url.band);
+    return band !== null ? selectEpochPair(frames, band) : null;
+  }, [url.band, frames]);
   // In Compare the metadata card follows the marked epoch, else epoch A.
   const compareFrame = useMemo(() => {
     if (url.view !== "compare" || url.embed) return null;
     const marked = frames.find((f) => f.meta.id === pending?.frameId);
-    if (marked !== undefined) return marked;
-    const band = bandById(url.band);
-    return band !== null ? (selectEpochPair(frames, band)?.a ?? null) : null;
-  }, [url.view, url.embed, url.band, frames, pending]);
+    return marked ?? comparePair?.a ?? null;
+  }, [url.view, url.embed, frames, pending, comparePair]);
   const shownFrame =
     url.view === "compare" && !url.embed ? compareFrame : currentFrame;
 
@@ -473,20 +485,6 @@ export function App(props: AppProps) {
           onChange={(p) => {
             if (p.mode !== undefined) setUrl({ mode: p.mode, frame: 0 });
             if (p.detector !== undefined) setDetector(p.detector);
-          }}
-        />
-      </details>
-      <details className="app-group" open>
-        <summary className="app-group-title">
-          <h2 id="app-grp-bands">Spectral band</h2>
-          <GroupChevron />
-        </summary>
-        <BandSelector
-          value={url.band}
-          counts={bandCounts}
-          onChange={(b) => {
-            setPending(null);
-            setUrl({ band: b, view: "compare" });
           }}
         />
       </details>
@@ -543,17 +541,6 @@ export function App(props: AppProps) {
       </details>
       <details className="app-group" open>
         <summary className="app-group-title">
-          <h2 id="app-grp-findings">Findings ({findings.length})</h2>
-          <GroupChevron />
-        </summary>
-        <FindingsList
-          findings={findings}
-          storage={findingsClient.kind}
-          onRemove={removeFinding}
-        />
-      </details>
-      <details className="app-group" open>
-        <summary className="app-group-title">
           <h2 id="app-grp-overlay">Overlay</h2>
           <GroupChevron />
         </summary>
@@ -585,8 +572,65 @@ export function App(props: AppProps) {
     </div>
   );
 
+  const left = (
+    <>
+      <section className="sky-card sky-panel" aria-labelledby="app-grp-bands">
+        <h2 id="app-grp-bands" className="sky-card-title">
+          Near-IR bands
+        </h2>
+        <BandSelector
+          value={url.band}
+          counts={bandCounts}
+          onChange={(b) => {
+            setPending(null);
+            setUrl({ band: b, view: "compare" });
+          }}
+        />
+      </section>
+      <section className="sky-card">{panel}</section>
+    </>
+  );
+
+  const right = (
+    <ReportPanel
+      pending={pending}
+      findings={findings}
+      storage={findingsClient.kind}
+      onSave={async (kind, note) => {
+        await saveFinding(kind, note);
+      }}
+      onCancel={() => setPending(null)}
+      onSpectrum={spec.requestAt}
+      onRemove={removeFinding}
+    />
+  );
+
+  const width = framesResult.response?.width;
+  const height = framesResult.response?.height;
+  const headerMeta =
+    q !== undefined ? (
+      <>
+        <p>
+          Region: RA {q.ra_deg.toFixed(3)}° · Dec {q.dec_deg.toFixed(3)}°
+        </p>
+        <p>
+          {comparePair?.dtDays != null
+            ? `Δt = ${formatDeltaT(comparePair.dtDays)} · `
+            : ""}
+          {width !== undefined && height !== undefined
+            ? `${width} × ${height} px`
+            : ""}
+        </p>
+      </>
+    ) : undefined;
+
   return (
     <AppShell
+      variant="sky"
+      left={left}
+      right={right}
+      subtitle="Moving-object hunter"
+      headerMeta={headerMeta}
       embed={url.embed}
       targets={targets}
       onSelectTarget={submitCoords}
@@ -629,10 +673,12 @@ export function App(props: AppProps) {
         findings={findings}
         pending={pending}
         onMark={setPending}
-        onSaveFinding={saveFinding}
         onResult={setFramesResult}
         onRetry={() => setRetryNonce((n) => n + 1)}
       />
+      <p className="sky-toast" role="status" aria-live="polite">
+        {toast ?? ""}
+      </p>
     </AppShell>
   );
 }

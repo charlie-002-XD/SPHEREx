@@ -10,7 +10,7 @@ export interface FindingsListProps {
 }
 
 export function FindingsList(props: FindingsListProps) {
-  const list = [...props.findings].reverse();
+  const list = props.findings.map((f, i) => ({ f, n: i + 1 })).reverse();
   return (
     <div className="fl">
       <p className="fl-note">
@@ -19,31 +19,26 @@ export function FindingsList(props: FindingsListProps) {
           : "Saved on the server."}
       </p>
       {list.length === 0 ? (
-        <p className="fl-empty">
-          No findings yet. In Compare view, click any object that moves between
-          epochs.
-        </p>
+        <p className="fl-empty">No reports yet.</p>
       ) : (
         <ul className="fl-list" aria-label="Saved findings">
-          {list.map((f) => {
+          {list.map(({ f, n }) => {
             const band = bandById(f.band);
             return (
               <li key={f.id} className="fl-item">
-                <span
-                  className="fl-swatch"
+                <div
+                  className="fl-body"
                   style={
                     {
                       "--band": band?.color ?? "var(--accent)",
                     } as React.CSSProperties
                   }
-                  aria-hidden="true"
-                />
-                <div className="fl-body">
+                >
                   <div className="fl-head num">
                     <span>
-                      {FINDING_KIND_LABELS[f.kind]} · ({f.x}, {f.y})
+                      #{n} · ({f.x}, {f.y})
                     </span>
-                    <span className="fl-dim">
+                    <span className="fl-band">
                       {band !== null
                         ? `${band.centerUm.toFixed(1)} µm`
                         : f.band}{" "}
@@ -55,7 +50,12 @@ export function FindingsList(props: FindingsListProps) {
                       RA {f.ra_deg.toFixed(5)}° · Dec {f.dec_deg.toFixed(5)}°
                     </div>
                   ) : null}
-                  {f.note !== "" ? <p className="fl-text">{f.note}</p> : null}
+                  <p className="fl-text">
+                    <span className="fl-kind">
+                      {FINDING_KIND_LABELS[f.kind]}
+                    </span>
+                    {f.note !== "" ? ` — ${f.note}` : null}
+                  </p>
                 </div>
                 <button
                   type="button"

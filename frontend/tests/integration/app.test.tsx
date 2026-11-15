@@ -53,7 +53,7 @@ afterEach(() => {
 
 describe("App integration", () => {
   it("renders frames from ?mock=1 with no backend", async () => {
-    window.history.replaceState(null, "", "/?mock=1");
+    window.history.replaceState(null, "", "/?mock=1&view=timelapse");
     render(<App />);
     const canvas = await screen.findByRole("img", {
       name: /Frame 1 of 12/,
@@ -64,6 +64,7 @@ describe("App integration", () => {
   });
 
   it("opens the spectrum panel with mock data on canvas click", async () => {
+    window.history.replaceState(null, "", "/?view=timelapse");
     render(<App mockData={makeMockFramesResponse()} />);
     const canvas = await screen.findByRole("img", {
       name: /Frame 1 of 12/,
@@ -76,7 +77,7 @@ describe("App integration", () => {
     expect(panel).toBeTruthy();
     // Docked into the layout (f6): inside the view column, never a sibling
     // overlay, and it contains none of the search/transport controls.
-    expect(panel.closest(".app-view")).not.toBeNull();
+    expect(panel.closest(".sky-center")).not.toBeNull();
     expect(panel.closest(".app-drawer")).not.toBeNull();
     const go = screen.getByRole("button", { name: "Go: load time-lapse" });
     const play = screen.getByRole("button", { name: "Play" });
@@ -94,6 +95,7 @@ describe("App integration", () => {
   });
 
   it("mounts and unmounts the Aladin overlay from the panel toggle", async () => {
+    window.history.replaceState(null, "", "/?view=timelapse");
     render(<App mockData={makeMockFramesResponse()} />);
     await screen.findByRole("img", { name: /Frame 1 of 12/ });
     const toggle = screen.getByRole("checkbox", {
@@ -114,7 +116,7 @@ describe("App integration", () => {
     const epochA = await screen.findByRole("img", { name: /^Epoch A/ });
     expect(screen.getByRole("img", { name: /^Epoch B/ })).toBeTruthy();
     expect(screen.getByRole("slider", { name: /divider/ })).toBeTruthy();
-    expect(screen.getByText(/Δt = /)).toBeTruthy();
+    expect(screen.getAllByText(/Δt = /).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("radio", { name: "Blink" }));
     expect(screen.getByText("0.50 s")).toBeTruthy();
@@ -128,7 +130,8 @@ describe("App integration", () => {
     expect(form.textContent).toContain("12");
     fireEvent.click(screen.getByRole("radio", { name: "Planet" }));
     fireEvent.click(screen.getByRole("button", { name: "Save finding" }));
-    expect(await screen.findByText(/Planet · \(12, 36\)/)).toBeTruthy();
+    expect(await screen.findByText(/#1 · \(12, 36\)/)).toBeTruthy();
+    expect(screen.getByText("Finding saved at (12, 36).")).toBeTruthy();
     expect(window.localStorage.getItem("spherex-blink.findings.v1")).toContain(
       "planet",
     );

@@ -341,27 +341,34 @@ export function EpochComparator(props: EpochComparatorProps) {
         <div className="cmp-labels" aria-hidden="true">
           {mode === "slider" || !hasB ? (
             <>
-              <span className="tl-chip num">Epoch A · {dateA}</span>
+              <span className="cmp-chip num" title={`Observed ${dateA}`}>
+                Epoch A
+              </span>
               {hasB ? (
-                <span className="tl-chip num">Epoch B · +{dt ?? "—"}</span>
+                <span
+                  className="cmp-chip num"
+                  title={`Observed ${dateB ?? "—"}`}
+                >
+                  Epoch B · +{dt ?? "—"}
+                </span>
               ) : null}
             </>
           ) : (
-            <span className="tl-chip num cmp-epoch-chip" key={visible}>
+            <span className="cmp-chip num cmp-epoch-chip" key={visible}>
               <span
                 className={visible === "A" ? "cmp-dot" : "cmp-dot cmp-dot-b"}
               />
               Epoch {visible}
-              {visible === "B" ? ` · +${dt ?? "—"}` : ` · ${dateA}`}
+              {visible === "B" ? ` · +${dt ?? "—"}` : ""}
             </span>
           )}
         </div>
 
         <div className="cmp-hud" aria-hidden="true">
-          <span ref={hudRef} className="tl-chip num">
+          <span ref={hudRef} className="cmp-chip cmp-chip-s num">
             X 000 Y 000
           </span>
-          <span className="tl-chip num cmp-lambda">
+          <span className="cmp-chip cmp-chip-s num cmp-lambda">
             λ {band.centerUm.toFixed(1)} µm
           </span>
         </div>

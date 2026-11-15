@@ -19,7 +19,7 @@ export interface CompareControlsProps {
 const MODES: ReadonlyArray<{ id: CompareMode; label: string; hint: string }> = [
   {
     id: "slider",
-    label: "Slider",
+    label: "Before / After",
     hint: "Drag the divider between epoch A and epoch B",
   },
   {
@@ -32,7 +32,7 @@ const MODES: ReadonlyArray<{ id: CompareMode; label: string; hint: string }> = [
 export function CompareControls(props: CompareControlsProps) {
   const blink = props.mode === "blink";
   return (
-    <div className="cmp-controls">
+    <div className="cmp-controls sky-card">
       <div
         className="ms-group cmp-modes"
         role="radiogroup"

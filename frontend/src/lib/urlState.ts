@@ -39,7 +39,7 @@ export const DEFAULT_URL_STATE: UrlState = {
   fps: 5,
   frame: 0,
   embed: false,
-  view: "timelapse",
+  view: "compare",
   band: DEFAULT_BAND_ID,
 };
 

@@ -13,8 +13,8 @@
     system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     sans-serif;
   --font-mono:
-    ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
-    "Liberation Mono", monospace;
+    ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
   --text-xs: 0.75rem; /* 12px: micro-labels, captions, overlay */
   --text-sm: 0.875rem; /* 14px: body and controls */
   --text-md: 1rem; /* 16px: emphasis, mobile inputs (no iOS zoom) */
@@ -118,4 +118,41 @@
     --band-stroke: rgb(40 88 184 / 0.3);
     --skel-hi: #f7f8fa;
   }
+}
+
+/* Sky theme (.app-sky): the dark space look of the comparator layout. The
+   whole app shell is an image instrument here, so it stays dark in both
+   color schemes, like the stage and scrim. Same token names as :root so
+   every component inherits it; contrast is asserted in tokens.test.ts. */
+.app-sky {
+  color-scheme: dark;
+  --bg: #03050c;
+  --bg-raised: #070b17;
+  --bg-inset: #02040a;
+  --bg-hover: #111a2e;
+  --fg: #e6ebf2;
+  --fg-dim: #a3adbd;
+  --fg-faint: #8590a3;
+  --border: #1a2236;
+  --border-strong: #66728a;
+  --accent: #5fd4ea;
+  --accent-fg: #03131a;
+  --accent-soft: #0b2a33;
+  --danger: #f28b82;
+  --warn: #fdc970;
+  --focus: #5fd4ea;
+  --shadow: 0 1.5rem 3rem rgb(0 0 0 / 0.45);
+  --band-fill: rgb(95 212 234 / 0.1);
+  --band-stroke: rgb(95 212 234 / 0.32);
+  --skel-hi: #0d1426;
+
+  --sky-panel: rgb(7 11 23 / 0.72);
+  --sky-panel-border: rgb(255 255 255 / 0.09);
+  --sky-glow: rgb(95 212 234 / 0.35);
+  --sky-glow-soft: rgb(95 212 234 / 0.12);
+  --sky-nebula-a: rgb(56 189 248 / 0.12);
+  --sky-nebula-b: rgb(217 70 239 / 0.1);
+  --epoch-b: #f9a8d4;
+  --epoch-b-soft: rgb(244 114 182 / 0.15);
+  --ok: #34d399;
 }
