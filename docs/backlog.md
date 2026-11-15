@@ -11,7 +11,7 @@
 | f2-spectrum | Spectrum panel, flags, Aladin | Devin | f1 | merged |
 | b5-api-routes | Routes, config, static serving, limits | Devin | b1, b2, b4 | merged |
 | f5-wire-spectrum | Wire spectrum/metadata/overlay, bundle uPlot, ?mock=1 | Devin | f2, f4 | merged |
-| ops-docker-ci | Dockerfile, CI, DEPLOY.md | Devin | - | running |
+| ops-docker-ci | Dockerfile, CI, DEPLOY.md | Devin | - | merged |
 | f6-visual-polish | Elegant minimalist visual pass (design expert agent) | Opus 5.5 designer | f5 | merged (166 FE tests) |
 | integration-live | Real-data end to end, numbers, screenshots (Opus agent) | Opus 5.5 | b5, f5 | running |
 | f4-layout-design | Minimalist responsive app shell, tokens, embed mode | Devin | f1 | merged |
@@ -21,6 +21,8 @@
 | submission-docs | README, project-page text, slides, video script, checklist | Devin | - | merged (drafts; SI field to fix) |
 | f7-fix-findings | Fix Aladin effect bug, a11y labels/contrast, make e2e green | Devin | f3, f6 | merged |
 | b7-fix-api-bugs | Fix 5 API bugs found by b6 (spectrum range validation, /api/* 404, log leak, npix cap, detector empty) | Devin | integration-live | blocked on integration |
+| ops-verify-image | Prove the container with the real app, measured size, smoke in CI | Devin | b5, f7 | running |
+| f8-about-credits | About dialog, first-visit hint, embed attribution, eslint ignore | Devin | f7 | running |
 | submission | README, SI_USAGE, REFERENCES, demo (<=30 s / <=7 slides), submit | all | deploy | todo |
 | study | Team study collection in app.haiku.ac (content to confirm) | Claude | - | todo |
 
