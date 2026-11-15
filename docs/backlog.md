@@ -19,7 +19,7 @@
 | b6-security-tests | Fuzz + security + robustness tests (tests only) | Devin | b5 | merged (5 bugs ignored) |
 | deploy | Dockerfile, CI, hosting, warm-up, FortiGuard | Claude | integration | todo |
 | submission-docs | README, project-page text, slides, video script, checklist | Devin | - | merged (drafts; SI field to fix) |
-| f7-fix-findings | Fix Aladin effect bug, a11y labels/contrast, make e2e green | Devin | f3, f6 | running |
+| f7-fix-findings | Fix Aladin effect bug, a11y labels/contrast, make e2e green | Devin | f3, f6 | merged |
 | b7-fix-api-bugs | Fix 5 API bugs found by b6 (spectrum range validation, /api/* 404, log leak, npix cap, detector empty) | Devin | integration-live | blocked on integration |
 | submission | README, SI_USAGE, REFERENCES, demo (<=30 s / <=7 slides), submit | all | deploy | todo |
 | study | Team study collection in app.haiku.ac (content to confirm) | Claude | - | todo |

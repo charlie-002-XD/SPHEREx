@@ -68,3 +68,6 @@ Accepted: docked spectrum panel (never position:fixed), side panel 22rem (352 px
 
 ## D-023 (2026-11-15) f3 and b6 merged; defects queued
 f3 (Playwright) and b6 (fuzz/security) merged. b6 found 5 real API bugs, kept as #[ignore] tests: spectrum lacks range validation (ra=400 -> 404 instead of 400), /api/v2 and /api/ fall through to the SPA, logs leak full upstream URL path, payload at OUTPUT_NPIX=256 is ~20.0 MB, detector filter emptying the set returns 404 in diff mode. They go to task b7-fix-api-bugs after integration-live (which edits backend/src). f3 found Aladin overlay effect bug, axe label/contrast issues; f7-fix-findings (Devin) fixes them and repairs the suite after the f6 redesign.
+
+## D-024 (2026-11-15) f7 merged; main fully green
+main: tsc ok, vitest 178 pass, eslint clean, Playwright 30 pass / 2 skipped (@live), no test.fail markers; backend 110 pass / 5 ignored (b6 bugs queued in b7). Overlay init bug fixed, a11y names fixed, border-strong >= 3:1. Polish note: eslint.config.js should ignore test-results/ and playwright-report/ (generated).
