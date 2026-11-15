@@ -71,3 +71,6 @@ f3 (Playwright) and b6 (fuzz/security) merged. b6 found 5 real API bugs, kept as
 
 ## D-024 (2026-11-15) f7 merged; main fully green
 main: tsc ok, vitest 178 pass, eslint clean, Playwright 30 pass / 2 skipped (@live), no test.fail markers; backend 110 pass / 5 ignored (b6 bugs queued in b7). Overlay init bug fixed, a11y names fixed, border-strong >= 3:1. Polish note: eslint.config.js should ignore test-results/ and playwright-report/ (generated).
+
+## D-025 (2026-11-15) f8 merged; frontend feature-complete
+About dialog (how to read modes, detectors, flags, keyboard, data credits, Apache-2.0), dismissible first-visit hint, embed attribution, eslint ignores. main: vitest 191, Playwright 48 pass / 2 skipped @live, eslint clean, build 82.9 kB gz. Visual check of About and hint done in Chrome (mock data). TODO(team): repository link in About once the repo is public.
