@@ -72,9 +72,11 @@ export function createLocalFindingsClient(
   key = FINDINGS_STORAGE_KEY,
 ): FindingsClient {
   let memory: Finding[] = [];
+  // After a failed write the in-memory copy is newer than storage.
+  let storageStale = false;
 
   const read = (): Finding[] => {
-    if (store === null) return memory;
+    if (store === null || storageStale) return memory;
     try {
       const raw = store.getItem(key);
       if (raw === null) return [];
@@ -90,7 +92,9 @@ export function createLocalFindingsClient(
     if (store === null) return;
     try {
       store.setItem(key, JSON.stringify(list));
+      storageStale = false;
     } catch {
+      storageStale = true;
       // quota exceeded or storage disabled: keep the in-memory copy
     }
   };

@@ -56,6 +56,23 @@ describe("local findings client", () => {
     store.setItem("k", JSON.stringify([{ id: 1 }]));
     expect(await c.list()).toEqual([]);
   });
+  it("keeps findings in memory when storage writes fail", async () => {
+    const store = memoryStore();
+    const c = createLocalFindingsClient(
+      {
+        getItem: store.getItem,
+        setItem: () => {
+          throw new Error("quota");
+        },
+      },
+      "k",
+    );
+    const f1 = await c.add(sample);
+    await c.add({ ...sample, x: 11 });
+    expect(await c.list()).toHaveLength(2);
+    await c.remove(f1.id);
+    expect((await c.list()).map((f) => f.x)).toEqual([11]);
+  });
   it("works without storage", async () => {
     const c = createLocalFindingsClient(null);
     await c.add(sample);
