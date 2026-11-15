@@ -56,6 +56,10 @@ describe("App integration", () => {
   it("renders frames from ?mock=1 with no backend", async () => {
     window.history.replaceState(null, "", "/?mock=1&view=timelapse");
     render(<App />);
+    // The demo autoload rewrites the URL but keeps the mock flag.
+    await screen.findByRole("img", { name: /Frame 1 of 12/ });
+    expect(window.location.search).toContain("ra=");
+    expect(window.location.search).toContain("mock=1");
     const canvas = await screen.findByRole("img", {
       name: /Frame 1 of 12/,
     });
