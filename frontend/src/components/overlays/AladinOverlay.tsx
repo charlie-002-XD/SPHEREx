@@ -38,10 +38,15 @@ function AladinOverlayInner(props: AladinOverlayProps) {
   const aGlobal = useRef<AladinGlobal | null>(null);
   const aladin = useRef<AladinInstance | null>(null);
 
-  // Lazy init on first open. No cleanup that destroys the instance: the
-  // widget persists for the session once created (catalog queries follow).
+  // Lazy init on first open. The effect keys on `open` only: it must not
+  // depend on `status`, because the setStatus("loading") it performs would
+  // re-run the effect and flip `disposed`, invalidating the only handlers
+  // that can reach "ready"/"error". loadAladin() dedupes the script load
+  // and the close path resets status + instance explicitly, so no further
+  // guard is needed (a StrictMode remount simply attaches a second
+  // handler to the same pending load).
   useEffect(() => {
-    if (!open || status !== "idle") return;
+    if (!open) return;
     let disposed = false;
     setStatus("loading");
     loadAladin()
@@ -80,7 +85,7 @@ function AladinOverlayInner(props: AladinOverlayProps) {
       disposed = true;
     };
     // Init once per open; ra/dec/fov sync happens in the effect below.
-  }, [open, status]);
+  }, [open]);
 
   // Keep the view centered on the viewer's position/FOV.
   useEffect(() => {

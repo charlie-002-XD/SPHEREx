@@ -17,9 +17,12 @@ export default defineConfig({
   expect: { timeout: 5_000 },
   reporter: [
     ["list"],
-    ["html", { outputFolder: "test-results/report", open: "never" }],
+    // Reports/artifacts live under dist/ so `eslint .` never scans the
+    // report's bundled JS (eslint.config.js ignores dist; test-results/ is
+    // kept in .gitignore for any stray output).
+    ["html", { outputFolder: "dist/test-results/report", open: "never" }],
   ],
-  outputDir: "test-results/artifacts",
+  outputDir: "dist/test-results/artifacts",
   use: {
     baseURL: PREVIEW_URL,
     trace: "retain-on-failure",

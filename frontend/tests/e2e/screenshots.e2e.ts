@@ -1,9 +1,9 @@
 // Test 11 — reference screenshots at the three viewports in both color
-// schemes, saved under frontend/test-results/screens/ (runtime artifacts,
-// not committed).
+// schemes, saved under frontend/dist/test-results/screens/ (runtime
+// artifacts, not committed; dist/ is git- and eslint-ignored).
 import { expect, frameCanvas, mockUrl, test } from "./fixtures";
 
-const SHOTS_DIR = "test-results/screens";
+const SHOTS_DIR = "dist/test-results/screens";
 const VIEWPORTS = [
   { width: 375, height: 667 },
   { width: 768, height: 1024 },

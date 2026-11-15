@@ -83,11 +83,16 @@ const TEXT_PAIRS: Array<[string, string]> = [
   ["warn", "bg-raised"],
 ];
 
-// Non-text UI that must be perceivable (3:1): focus ring, slider thumb.
+// Non-text UI that must be perceivable (3:1): focus ring, slider thumb,
+// and the borders of interactive controls on every surface (WCAG 1.4.11).
 const UI_PAIRS: Array<[string, string]> = [
   ["focus", "bg"],
   ["focus", "bg-raised"],
   ["fg", "bg"], // slider thumb
+  ["border-strong", "bg"],
+  ["border-strong", "bg-raised"],
+  ["border-strong", "bg-inset"],
+  ["border-strong", "bg-hover"],
 ];
 
 describe.each([

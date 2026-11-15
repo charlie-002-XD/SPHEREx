@@ -78,7 +78,7 @@ describe("App integration", () => {
     // overlay, and it contains none of the search/transport controls.
     expect(panel.closest(".app-view")).not.toBeNull();
     expect(panel.closest(".app-drawer")).not.toBeNull();
-    const go = screen.getByRole("button", { name: "Load time-lapse" });
+    const go = screen.getByRole("button", { name: "Go: load time-lapse" });
     const play = screen.getByRole("button", { name: "Play" });
     expect(panel.contains(go)).toBe(false);
     expect(panel.contains(play)).toBe(false);

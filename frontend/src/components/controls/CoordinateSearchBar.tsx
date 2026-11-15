@@ -98,7 +98,7 @@ export function CoordinateSearchBar(props: CoordinateSearchBarProps) {
           className="csb-go"
           onClick={submit}
           disabled={loading}
-          aria-label="Load time-lapse"
+          aria-label={loading ? "Loading…" : "Go: load time-lapse"}
         >
           {loading ? "Loading…" : "Go"}
         </button>

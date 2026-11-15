@@ -74,6 +74,9 @@ test("invalid URL values fall back to defaults without crashing", async ({
   ).toBeChecked();
   await expect(page.getByLabel("Stretch")).toHaveValue("linear");
   await expect(page.getByLabel("Colormap")).toHaveValue("grayscale");
-  await expect(page.getByText("FOV 0.05°")).toBeVisible();
+  await expect(
+    page.getByLabel("Field of view in degrees"),
+  ).toHaveValue("0.05");
+  await expect(page.getByText("0.05°", { exact: true })).toBeVisible();
   await expect(page.getByText("5 fps")).toBeVisible();
 });
