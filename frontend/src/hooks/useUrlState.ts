@@ -29,7 +29,14 @@ export function useUrlState(): [
     setState((prev) => {
       const next = { ...prev, ...patch };
       if (typeof window !== "undefined") {
-        const q = serializeUrlState(next);
+        // ?mock=1 is not app state but must survive every URL rewrite so a
+        // reload or shared link stays offline.
+        const mock = new URLSearchParams(window.location.search).get("mock");
+        let q = serializeUrlState(next);
+        if (mock !== null) {
+          const m = `mock=${encodeURIComponent(mock)}`;
+          q = q === "" ? `?${m}` : `${q}&${m}`;
+        }
         window.history.replaceState(null, "", q === "" ? window.location.pathname : q);
       }
       return next;

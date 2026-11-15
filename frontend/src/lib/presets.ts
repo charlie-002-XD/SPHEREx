@@ -1,6 +1,8 @@
 // Preset pills for the five official challenge targets. WISE 0855 uses the
 // coordinates published on the challenge page; the other four come from the
 // team plan table (to be verified against SIMBAD before final submission).
+import { parseDecToDeg, parseRaToDeg } from "./coords";
+
 export interface PresetTarget {
   id: string;
   label: string;
@@ -49,3 +51,28 @@ export const PRESET_TARGETS: readonly PresetTarget[] = [
     fov: 0.05,
   },
 ];
+
+// Loaded when the page opens with no position so the viewer never starts
+// empty. The bundled mock series (lib/mock.ts) covers the same position
+// and stands in when the backend does not answer.
+export const DEMO_TARGET: PresetTarget = {
+  id: "wise-0855",
+  label: "WISE 0855",
+  ra: "08h55m10.831s",
+  dec: "-07d14m42.53s",
+  fov: 0.05,
+};
+
+const DEMO_TOLERANCE_DEG = 0.01;
+
+export function isDemoTarget(ra: string, dec: string): boolean {
+  const r = parseRaToDeg(ra);
+  const d = parseDecToDeg(dec);
+  const r0 = parseRaToDeg(DEMO_TARGET.ra);
+  const d0 = parseDecToDeg(DEMO_TARGET.dec);
+  if (r === null || d === null || r0 === null || d0 === null) return false;
+  return (
+    Math.abs(r - r0) < DEMO_TOLERANCE_DEG &&
+    Math.abs(d - d0) < DEMO_TOLERANCE_DEG
+  );
+}

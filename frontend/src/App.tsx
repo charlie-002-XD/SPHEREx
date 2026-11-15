@@ -12,7 +12,9 @@ import {
   useMemo,
   useState,
 } from "react";
-import { AppShell } from "./components/layout/AppShell";
+import { AppShell, DESKTOP_QUERY } from "./components/layout/AppShell";
+import { SkyPanel } from "./components/layout/SkyPanel";
+import { useMediaQuery } from "./components/layout/useMediaQuery";
 import { AboutDialog } from "./components/about/AboutDialog";
 import { FirstRunHint } from "./components/about/FirstRunHint";
 import { EmbedCredit } from "./components/about/EmbedCredit";
@@ -42,6 +44,22 @@ import {
 } from "./components/spectrum/spectrumApi";
 import { makeMockSpectrum } from "./components/spectrum/mockSpectrum";
 import { FrameMetadata } from "./components/metadata/FrameMetadata";
+import { CompareView } from "./components/compare/CompareView";
+import { BandSelector } from "./components/compare/BandSelector";
+import { ReportPanel } from "./components/compare/ReportPanel";
+import type { PendingMark } from "./components/compare/EpochComparator";
+import {
+  bandById,
+  bandFrameCounts,
+  formatDeltaT,
+  selectEpochPair,
+} from "./lib/bands";
+import {
+  createLocalFindingsClient,
+  type Finding,
+  type FindingKind,
+  type FindingsClient,
+} from "./lib/findings";
 import { useUrlState } from "./hooks/useUrlState";
 import { useFrames, type FramesResult } from "./hooks/useFrames";
 import { fetchTargets } from "./lib/api";
@@ -52,11 +70,15 @@ import {
   parseRaToDeg,
 } from "./lib/coords";
 import { makeMockFramesResponse } from "./lib/mock";
-import { PRESET_TARGETS } from "./lib/presets";
+import { DEMO_TARGET, isDemoTarget, PRESET_TARGETS } from "./lib/presets";
 import { isStretchKind, STRETCH_KINDS } from "./lib/stretch";
 import { COLORMAP_NAMES, isColormapName } from "./lib/colormaps";
 import type { FramesResponse } from "./lib/types";
-import type { UrlState } from "./lib/urlState";
+import type { UrlState, ViewKind } from "./lib/urlState";
+
+// How long the demo target waits for the backend before falling back to
+// the bundled series.
+const DEMO_TIMEOUT_MS = 8000;
 
 const DEFAULT_API_BASE = (import.meta.env.VITE_API_BASE ?? "") as string;
 
@@ -82,6 +104,35 @@ function createMockSpectrumClient(): SpectrumClient {
     spectrum: (raDeg, decDeg) =>
       Promise.resolve(makeMockSpectrum(raDeg, decDeg)),
   };
+}
+
+const VIEW_OPTIONS: ReadonlyArray<{ id: ViewKind; label: string }> = [
+  { id: "timelapse", label: "Time-lapse" },
+  { id: "compare", label: "Compare A/B" },
+];
+
+function ViewSwitch(props: {
+  value: ViewKind;
+  onChange: (v: ViewKind) => void;
+}) {
+  return (
+    <div className="vsw">
+      <div className="ms-group" role="radiogroup" aria-label="Viewer">
+        {VIEW_OPTIONS.map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            role="radio"
+            aria-checked={props.value === o.id}
+            className={props.value === o.id ? "ms-opt ms-on" : "ms-opt"}
+            onClick={() => props.onChange(o.id)}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // Disclosure chevron for the collapsible panel sections.
@@ -118,6 +169,9 @@ interface ExplorerProps {
   embed: boolean;
   mockData?: FramesResponse;
   onPick: (raDeg: number, decDeg: number) => void;
+  findings: readonly Finding[];
+  pending: PendingMark | null;
+  onMark: (m: PendingMark | null) => void;
   onResult: (r: FramesResult) => void;
   onRetry: () => void;
 }
@@ -131,6 +185,14 @@ function Explorer(props: ExplorerProps) {
     loop: true,
     blink: false,
   });
+  // Demo target only: if the backend errors or does not answer in time,
+  // show the bundled mock series of the same position instead of an error.
+  const demo = isDemoTarget(url.ra, url.dec);
+  const [fallback, setFallback] = useState(false);
+  const demoMock = useMemo(
+    () => (fallback && demo ? makeMockFramesResponse() : undefined),
+    [fallback, demo],
+  );
   const res = useFrames(
     apiBase,
     {
@@ -141,8 +203,20 @@ function Explorer(props: ExplorerProps) {
       detector,
       maxFrames: 60,
     },
-    mockData,
+    mockData ?? demoMock,
   );
+  const usingFallback = demoMock !== undefined && mockData === undefined;
+
+  useEffect(() => {
+    if (!demo || fallback || mockData !== undefined) return;
+    if (res.status === "error") {
+      setFallback(true);
+      return;
+    }
+    if (res.status !== "loading") return;
+    const id = window.setTimeout(() => setFallback(true), DEMO_TIMEOUT_MS);
+    return () => window.clearTimeout(id);
+  }, [demo, fallback, mockData, res.status]);
 
   const { onResult } = props;
   useEffect(() => onResult(res), [res, onResult]);
@@ -199,39 +273,77 @@ function Explorer(props: ExplorerProps) {
   const width = res.response?.width ?? 64;
   const height = res.response?.height ?? 64;
   const current =
-    res.frames[Math.min(Math.max(url.frame, 0), res.frames.length - 1)] ??
-    null;
+    res.frames[Math.min(Math.max(url.frame, 0), res.frames.length - 1)] ?? null;
+
+  const compare = url.view === "compare" && !embed;
 
   return (
     <>
+      {!embed ? (
+        <ViewSwitch
+          value={url.view}
+          onChange={(v) => {
+            props.onMark(null);
+            setLocal((prev) => ({ ...prev, playing: false }));
+            setUrl({ view: v });
+          }}
+        />
+      ) : null}
       {res.status === "loading" ? (
         <p className="app-status" role="status">
           Updating…
         </p>
       ) : null}
-      <div
-        className="app-stage"
-        onClick={
-          embed
-            ? undefined
-            : canvasClickToSpectrum(
-                { frame: current, width, height },
-                props.onPick,
-              )
-        }
-      >
-        <TimeLapseCanvas
+      {usingFallback ? (
+        <p className="app-status sky-fallback" role="status">
+          Backend unavailable: showing the bundled demo series for{" "}
+          {DEMO_TARGET.label}.{" "}
+          <button
+            type="button"
+            className="sky-link"
+            onClick={() => setFallback(false)}
+          >
+            Retry
+          </button>
+        </p>
+      ) : null}
+      {compare ? (
+        <CompareView
           frames={res.frames}
           width={width}
           height={height}
-          unit={res.response?.unit}
           stretch={url.stretch}
           cmap={url.cmap}
-          transport={transport}
-          onTransport={onTransport}
-          embed={embed}
+          bandId={url.band}
+          findings={props.findings}
+          pending={props.pending}
+          onMark={props.onMark}
         />
-      </div>
+      ) : (
+        <div
+          className="app-stage"
+          onClick={
+            embed
+              ? undefined
+              : canvasClickToSpectrum(
+                  { frame: current, width, height },
+                  props.onPick,
+                )
+          }
+        >
+          <TimeLapseCanvas
+            frames={res.frames}
+            width={width}
+            height={height}
+            unit={res.response?.unit}
+            stretch={url.stretch}
+            cmap={url.cmap}
+            transport={transport}
+            onTransport={onTransport}
+            embed={embed}
+          />
+        </div>
+      )}
       {!embed && res.response?.truncated === true ? (
         <p className="app-status">
           Series truncated at {res.frames.length} of{" "}
@@ -245,10 +357,34 @@ function Explorer(props: ExplorerProps) {
 export function App(props: AppProps) {
   const { apiBase = DEFAULT_API_BASE } = props;
   const [url, setUrl] = useUrlState();
+  const desktop = useMediaQuery(DESKTOP_QUERY);
+  const [panels, setPanels] = useState(() => ({
+    bands: true,
+    controls: desktop,
+    report: true,
+    findings: desktop,
+  }));
+  const togglePanel = useCallback(
+    (k: keyof typeof panels) => (open: boolean) =>
+      setPanels((p) => ({ ...p, [k]: open })),
+    [],
+  );
+
+  // No position in the URL: load the demo target so the viewer never
+  // opens on the empty "Point at the sky" state.
+  useEffect(() => {
+    if (url.ra === "" && url.dec === "") {
+      setUrl({
+        ra: DEMO_TARGET.ra,
+        dec: DEMO_TARGET.dec,
+        fov: DEMO_TARGET.fov,
+        frame: 0,
+      });
+    }
+  }, [url.ra, url.dec, setUrl]);
   const [detector, setDetector] = useState<number | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
-  const [targets, setTargets] =
-    useState<readonly MenuTarget[]>(PRESET_TARGETS);
+  const [targets, setTargets] = useState<readonly MenuTarget[]>(PRESET_TARGETS);
   const [overlayOn, setOverlayOn] = useState(false);
   const [framesResult, setFramesResult] = useState<FramesResult>({
     status: "idle",
@@ -274,6 +410,75 @@ export function App(props: AppProps) {
     [apiBase, mockData],
   );
   const spec = useSpectrum(spectrumClient);
+
+  // The API contract has no findings endpoint yet, so findings persist in
+  // localStorage behind the FindingsClient interface.
+  const findingsClient = useMemo<FindingsClient>(
+    () => createLocalFindingsClient(),
+    [],
+  );
+  const [findings, setFindings] = useState<readonly Finding[]>([]);
+  const [pending, setPending] = useState<PendingMark | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (pending !== null) setPanels((p) => ({ ...p, report: true }));
+  }, [pending]);
+
+  useEffect(() => {
+    if (toast === null) return;
+    const id = window.setTimeout(() => setToast(null), 3000);
+    return () => window.clearTimeout(id);
+  }, [toast]);
+
+  useEffect(() => {
+    let alive = true;
+    findingsClient
+      .list()
+      .then((fs) => {
+        if (alive) setFindings(fs);
+      })
+      .catch(() => {
+        /* unreadable storage: start empty */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [findingsClient]);
+
+  const saveFinding = useCallback(
+    async (kind: FindingKind, note: string): Promise<Finding> => {
+      if (pending === null) throw new Error("no pending mark");
+      const f = await findingsClient.add({
+        x: pending.x,
+        y: pending.y,
+        ra_deg: pending.raDeg,
+        dec_deg: pending.decDeg,
+        band: pending.band,
+        epoch: pending.epoch,
+        kind,
+        note,
+        frame_id: pending.frameId,
+      });
+      setFindings((prev) => [...prev, f]);
+      setPending(null);
+      setToast(`Finding saved at (${f.x}, ${f.y}).`);
+      return f;
+    },
+    [findingsClient, pending],
+  );
+
+  const removeFinding = useCallback(
+    (id: string) => {
+      findingsClient
+        .remove(id)
+        .then(() => setFindings((prev) => prev.filter((f) => f.id !== id)))
+        .catch(() => {
+          /* keep the list unchanged */
+        });
+    },
+    [findingsClient],
+  );
 
   // The preset menu prefers server-provided targets (/api/v1/targets) and
   // silently keeps the built-in presets when the backend is unreachable.
@@ -306,9 +511,23 @@ export function App(props: AppProps) {
   );
 
   const frames = framesResult.frames;
+  const bandCounts = useMemo(() => bandFrameCounts(frames), [frames]);
   const currentFrame =
     frames[Math.min(Math.max(url.frame, 0), Math.max(frames.length - 1, 0))] ??
     null;
+
+  const comparePair = useMemo(() => {
+    const band = bandById(url.band);
+    return band !== null ? selectEpochPair(frames, band) : null;
+  }, [url.band, frames]);
+  // In Compare the metadata card follows the marked epoch, else epoch A.
+  const compareFrame = useMemo(() => {
+    if (url.view !== "compare" || url.embed) return null;
+    const marked = frames.find((f) => f.meta.id === pending?.frameId);
+    return marked ?? comparePair?.a ?? null;
+  }, [url.view, url.embed, frames, pending, comparePair]);
+  const shownFrame =
+    url.view === "compare" && !url.embed ? compareFrame : currentFrame;
 
   // Overlay view position: the queried position when a response exists,
   // else the coordinates currently entered in the search bar.
@@ -383,7 +602,7 @@ export function App(props: AppProps) {
           <GroupChevron />
         </summary>
         <FrameMetadata
-          frame={currentFrame?.meta ?? null}
+          frame={shownFrame?.meta ?? null}
           unit={framesResult.response?.unit}
           flagLegend={framesResult.response?.flag_legend}
         />
@@ -403,9 +622,7 @@ export function App(props: AppProps) {
         </label>
         {overlayOn ? (
           overlayPos !== null ? (
-            <Suspense
-              fallback={<p className="app-status">Loading overlay…</p>}
-            >
+            <Suspense fallback={<p className="app-status">Loading overlay…</p>}>
               <AladinOverlay
                 raDeg={overlayPos.raDeg}
                 decDeg={overlayPos.decDeg}
@@ -423,8 +640,78 @@ export function App(props: AppProps) {
     </div>
   );
 
+  const left = (
+    <>
+      <SkyPanel
+        id="app-grp-bands"
+        title="Near-IR bands"
+        open={panels.bands}
+        onToggle={togglePanel("bands")}
+      >
+        <BandSelector
+          value={url.band}
+          counts={bandCounts}
+          onChange={(b) => {
+            setPending(null);
+            setUrl({ band: b, view: "compare" });
+          }}
+        />
+      </SkyPanel>
+      <SkyPanel
+        id="app-grp-controls"
+        title="Controls"
+        open={panels.controls}
+        onToggle={togglePanel("controls")}
+      >
+        {panel}
+      </SkyPanel>
+    </>
+  );
+
+  const right = (
+    <ReportPanel
+      pending={pending}
+      findings={findings}
+      storage={findingsClient.kind}
+      reportOpen={panels.report}
+      findingsOpen={panels.findings}
+      onToggleReport={togglePanel("report")}
+      onToggleFindings={togglePanel("findings")}
+      onSave={async (kind, note) => {
+        await saveFinding(kind, note);
+      }}
+      onCancel={() => setPending(null)}
+      onSpectrum={spec.requestAt}
+      onRemove={removeFinding}
+    />
+  );
+
+  const width = framesResult.response?.width;
+  const height = framesResult.response?.height;
+  const headerMeta =
+    q !== undefined ? (
+      <>
+        <p>
+          Region: RA {q.ra_deg.toFixed(3)}° · Dec {q.dec_deg.toFixed(3)}°
+        </p>
+        <p>
+          {comparePair?.dtDays != null
+            ? `Δt = ${formatDeltaT(comparePair.dtDays)} · `
+            : ""}
+          {width !== undefined && height !== undefined
+            ? `${width} × ${height} px`
+            : ""}
+        </p>
+      </>
+    ) : undefined;
+
   return (
     <AppShell
+      variant="sky"
+      left={left}
+      right={right}
+      subtitle="Moving-object hunter"
+      headerMeta={headerMeta}
       embed={url.embed}
       targets={targets}
       onSelectTarget={submitCoords}
@@ -464,9 +751,15 @@ export function App(props: AppProps) {
         embed={url.embed}
         mockData={mockData}
         onPick={spec.requestAt}
+        findings={findings}
+        pending={pending}
+        onMark={setPending}
         onResult={setFramesResult}
         onRetry={() => setRetryNonce((n) => n + 1)}
       />
+      <p className="sky-toast" role="status" aria-live="polite">
+        {toast ?? ""}
+      </p>
     </AppShell>
   );
 }

@@ -122,7 +122,9 @@ describe("embed mode", () => {
     const html = renderToStaticMarkup(<App />);
     expect(html).toContain("app-header");
     expect(html).toContain("csb");
-    expect(html).toContain("app-panel");
+    expect(html).toContain("app-sky");
+    expect(html).toContain("sky-left");
+    expect(html).toContain("sky-right");
     expect(html).toContain("state"); // empty/loading state placeholder
   });
 });
@@ -167,8 +169,7 @@ describe("responsive CSS guards (static assertions for 375px)", () => {
     // No fixed px widths >= 375 in the base (mobile) layer; the only large
     // fixed width is --panel-w, applied inside the >=640px media query.
     const mobileLayer = SHELL_CSS.split("@media (min-width: 640px)")[0] ?? "";
-    const fixed =
-      mobileLayer.match(/(?<![a-z-])width:\s*(\d+)(px|rem)/g) ?? [];
+    const fixed = mobileLayer.match(/(?<![a-z-])width:\s*(\d+)(px|rem)/g) ?? [];
     for (const rule of fixed) {
       const n = Number(rule.replace(/width:\s*/, "").replace(/(px|rem)/, ""));
       const px = rule.endsWith("rem") ? n * 16 : n;

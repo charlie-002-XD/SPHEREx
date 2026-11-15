@@ -33,9 +33,31 @@ function vars(body: string): Map<string, string> {
 }
 
 const DARK = vars(block(TOKENS, ":root {"));
+function bodyAt(css: string, at: number): string {
+  if (at < 0) throw new Error("missing block");
+  const open = css.indexOf("{", at);
+  let depth = 0;
+  for (let i = open; i < css.length; i++) {
+    if (css[i] === "{") depth++;
+    if (css[i] === "}") depth--;
+    if (depth === 0) return css.slice(open + 1, i);
+  }
+  throw new Error("unbalanced");
+}
+
+// .app-sky: dark block first, light override inside the last media query.
+const SKY = new Map([
+  ...DARK,
+  ...vars(bodyAt(TOKENS, TOKENS.indexOf(".app-sky {"))),
+]);
 const LIGHT = new Map([
   ...DARK,
   ...vars(block(TOKENS, "@media (prefers-color-scheme: light)")),
+]);
+const SKY_LIGHT = new Map([
+  ...LIGHT,
+  ...SKY,
+  ...vars(bodyAt(TOKENS, TOKENS.lastIndexOf(".app-sky {"))),
 ]);
 
 function hex(v: string | undefined): Rgb {
@@ -98,9 +120,13 @@ const UI_PAIRS: Array<[string, string]> = [
 describe.each([
   ["dark", DARK],
   ["light", LIGHT],
+  ["sky", SKY],
+  ["sky light", SKY_LIGHT],
 ])("%s scheme contrast", (_name, t) => {
   it.each(TEXT_PAIRS)("%s on %s >= 4.5:1", (fg, bg) => {
-    expect(contrast(hex(t.get(fg)), hex(t.get(bg)))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(hex(t.get(fg)), hex(t.get(bg)))).toBeGreaterThanOrEqual(
+      4.5,
+    );
   });
   it.each(UI_PAIRS)("%s on %s >= 3:1", (fg, bg) => {
     expect(contrast(hex(t.get(fg)), hex(t.get(bg)))).toBeGreaterThanOrEqual(3);
@@ -115,8 +141,12 @@ describe("image overlay legibility", () => {
     expect(alpha).toBeGreaterThan(0);
     const g = Math.round(255 * (1 - alpha));
     const under: Rgb = [g, g, g];
-    expect(contrast(hex(DARK.get("scrim-fg")), under)).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(hex(DARK.get("scrim-warn")), under)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(hex(DARK.get("scrim-fg")), under)).toBeGreaterThanOrEqual(
+      4.5,
+    );
+    expect(contrast(hex(DARK.get("scrim-warn")), under)).toBeGreaterThanOrEqual(
+      4.5,
+    );
   });
 });
 
@@ -129,6 +159,8 @@ describe("tokens only", () => {
     "components/spectrum/spectrum.css",
     "components/metadata/metadata.css",
     "components/overlays/overlays.css",
+    "components/compare/compare.css",
+    "components/layout/sky.css",
   ];
   it.each(files)("%s has no literal colors", (f) => {
     const css = readFileSync(`${SRC}${f}`, "utf8").replace(

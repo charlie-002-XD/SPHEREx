@@ -209,8 +209,9 @@ export class WebGL2Renderer implements FrameRenderer {
     gl.deleteTexture(this.dataTex);
     gl.deleteTexture(this.cmapTex);
     gl.deleteProgram(this.program);
-    const ext = gl.getExtension("WEBGL_lose_context");
-    ext?.loseContext();
+    // No WEBGL_lose_context here: a canvas keeps one context for life, so
+    // losing it would blank any renderer re-created on the same canvas
+    // (React StrictMode mounts effects twice in development).
   }
 }
 

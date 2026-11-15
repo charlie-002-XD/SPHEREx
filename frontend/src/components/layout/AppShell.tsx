@@ -11,6 +11,7 @@ import type { CoordinateValue } from "../controls/CoordinateSearchBar";
 import { TargetMenu, type MenuTarget } from "./TargetMenu";
 import { useMediaQuery } from "./useMediaQuery";
 import "./app-shell.css";
+import "./sky.css";
 
 export const DESKTOP_QUERY = "(min-width: 640px)";
 
@@ -28,7 +29,85 @@ export interface AppShellProps {
   notice?: ReactNode;
   /** Attribution line rendered in embed mode only. */
   credit?: ReactNode;
+  /** "sky": dark three-column comparator layout (bands | viewer | report). */
+  variant?: "default" | "sky";
+  /** Sky layout: left column (band selector, display controls). */
+  left?: ReactNode;
+  /** Sky layout: right column (new report, findings). */
+  right?: ReactNode;
+  /** Sky layout: one-line description after the app name. */
+  subtitle?: ReactNode;
+  /** Sky layout: quiet data line on the right of the header. */
+  headerMeta?: ReactNode;
   children: ReactNode;
+}
+
+function AppMark() {
+  return (
+    <svg
+      className="app-mark"
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle
+        cx="8"
+        cy="8"
+        r="6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <circle cx="8" cy="8" r="2" fill="currentColor" />
+    </svg>
+  );
+}
+
+// Sky layout. Phones: one scrolling column (viewer, report, bands). From
+// 640px: viewer beside a side column holding both panels. From 1200px:
+// bands | viewer | report, each column scrolling on its own.
+function SkyShell(props: AppShellProps) {
+  const drawer = props.drawer ?? null;
+  return (
+    <div className="app app-sky">
+      <div className="sky-bg" aria-hidden="true" />
+      <header className="app-header sky-header">
+        <div className="sky-heading">
+          <p className="sky-eyebrow">SPHEREx · near-infrared sky</p>
+          <h1 className="app-title sky-title">
+            <AppMark />
+            SPHEREx Blink
+            {props.subtitle !== undefined ? (
+              <span className="sky-subtitle">· {props.subtitle}</span>
+            ) : null}
+          </h1>
+        </div>
+        <div className="app-actions">
+          {props.headerMeta !== undefined ? (
+            <div className="sky-meta num">{props.headerMeta}</div>
+          ) : null}
+          <TargetMenu targets={props.targets} onSelect={props.onSelectTarget} />
+          {props.headerActions ?? null}
+        </div>
+      </header>
+      {props.notice ?? null}
+      <div className="sky-body">
+        <div className="sky-center">
+          <div className="app-search sky-card">{props.search}</div>
+          <main className="app-main sky-main">{props.children}</main>
+          {drawer !== null ? (
+            <div className="app-drawer sky-card sky-drawer">{drawer}</div>
+          ) : null}
+        </div>
+        <aside className="sky-left" aria-label="Bands and display controls">
+          {props.left ?? null}
+        </aside>
+        <aside className="sky-right" aria-label="Reports and findings">
+          {props.right ?? null}
+        </aside>
+      </div>
+    </div>
+  );
 }
 
 export function AppShell(props: AppShellProps) {
@@ -45,6 +124,8 @@ export function AppShell(props: AppShellProps) {
       </div>
     );
   }
+
+  if (props.variant === "sky") return <SkyShell {...props} />;
 
   return (
     <div className="app">
@@ -111,7 +192,11 @@ export function AppShell(props: AppShellProps) {
               />
             </svg>
           </button>
-          <div className="app-panel-body" id="app-panel-body" hidden={!panelOpen}>
+          <div
+            className="app-panel-body"
+            id="app-panel-body"
+            hidden={!panelOpen}
+          >
             {panel}
           </div>
         </aside>

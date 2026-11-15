@@ -24,6 +24,8 @@ describe("parseUrlState", () => {
       fps: 12,
       frame: 7,
       embed: true,
+      view: "compare",
+      band: "b2",
     });
   });
   it("accepts sexagesimal coordinates", () => {
@@ -49,6 +51,17 @@ describe("parseUrlState", () => {
     );
     const st2 = parseUrlState(serializeUrlState(st));
     expect(st2).toEqual(st);
+  });
+  it("parses and round-trips the compare view and band", () => {
+    const st = parseUrlState("?view=compare&band=b4");
+    expect(st.view).toBe("compare");
+    expect(st.band).toBe("b4");
+    expect(parseUrlState(serializeUrlState(st))).toEqual(st);
+  });
+  it("falls back on unknown view or band", () => {
+    const st = parseUrlState("?view=gallery&band=b9");
+    expect(st.view).toBe(DEFAULT_URL_STATE.view);
+    expect(st.band).toBe(DEFAULT_URL_STATE.band);
   });
   it("omits defaults on serialize", () => {
     expect(serializeUrlState(DEFAULT_URL_STATE)).toBe("");

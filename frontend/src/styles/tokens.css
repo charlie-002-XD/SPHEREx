@@ -13,8 +13,8 @@
     system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     sans-serif;
   --font-mono:
-    ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
-    "Liberation Mono", monospace;
+    ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
   --text-xs: 0.75rem; /* 12px: micro-labels, captions, overlay */
   --text-sm: 0.875rem; /* 14px: body and controls */
   --text-md: 1rem; /* 16px: emphasis, mobile inputs (no iOS zoom) */
@@ -81,6 +81,19 @@
   --scrim: rgb(0 0 0 / 0.7);
   --scrim-fg: #f2f4f7;
   --scrim-warn: #fdc970;
+
+  /* Epoch comparator (sky viewer). The stage is an image area, so it stays
+     dark in both schemes like the scrim. Band swatches are data colors
+     (near-IR windows from short to long wavelength), used for swatches,
+     markers and the spectrum scale only, never for text. */
+  --stage-bg: #05070b;
+  --stage-grid: rgb(230 236 245 / 0.09);
+  --star: rgb(205 222 255 / 0.85);
+  --star-dim: rgb(205 222 255 / 0.4);
+  --band-1: #7dd3fc;
+  --band-2: #a5f3fc;
+  --band-3: #fcd34d;
+  --band-4: #fb923c;
 }
 
 @media (prefers-color-scheme: light) {
@@ -104,5 +117,77 @@
     --band-fill: rgb(40 88 184 / 0.08);
     --band-stroke: rgb(40 88 184 / 0.3);
     --skel-hi: #f7f8fa;
+  }
+}
+
+/* Sky theme (.app-sky): the space look of the comparator layout. Dark by
+   default with a light variant under prefers-color-scheme; the image stage
+   and scrim stay dark in both. Same token names as :root so every
+   component inherits it; contrast is asserted in tokens.test.ts. */
+.app-sky {
+  --bg: #03050c;
+  --bg-raised: #070b17;
+  --bg-inset: #02040a;
+  --bg-hover: #111a2e;
+  --fg: #e6ebf2;
+  --fg-dim: #a3adbd;
+  --fg-faint: #8590a3;
+  --border: #1a2236;
+  --border-strong: #66728a;
+  --accent: #5fd4ea;
+  --accent-fg: #03131a;
+  --accent-soft: #0b2a33;
+  --danger: #f28b82;
+  --warn: #fdc970;
+  --focus: #5fd4ea;
+  --shadow: 0 1.5rem 3rem rgb(0 0 0 / 0.45);
+  --band-fill: rgb(95 212 234 / 0.1);
+  --band-stroke: rgb(95 212 234 / 0.32);
+  --skel-hi: #0d1426;
+
+  --sky-panel: rgb(7 11 23 / 0.72);
+  --sky-panel-border: rgb(255 255 255 / 0.09);
+  --sky-glow: rgb(95 212 234 / 0.35);
+  --sky-glow-soft: rgb(95 212 234 / 0.12);
+  --sky-nebula-a: rgb(56 189 248 / 0.12);
+  --sky-nebula-b: rgb(217 70 239 / 0.1);
+  --sky-star-opacity: 1;
+  --epoch-b: #f9a8d4;
+  --epoch-b-soft: rgb(244 114 182 / 0.15);
+  --ok: #34d399;
+}
+
+@media (prefers-color-scheme: light) {
+  .app-sky {
+    --bg: #f3f6fa;
+    --bg-raised: #ffffff;
+    --bg-inset: #e9eef5;
+    --bg-hover: #e1e8f1;
+    --fg: #0f172a;
+    --fg-dim: #44516a;
+    --fg-faint: #586377;
+    --border: #d5dde8;
+    --border-strong: #6b778a;
+    --accent: #0b6b85;
+    --accent-fg: #ffffff;
+    --accent-soft: #dcf1f7;
+    --danger: #b3261e;
+    --warn: #8a5300;
+    --focus: #0b6b85;
+    --shadow: 0 1rem 2rem rgb(15 23 42 / 0.1);
+    --band-fill: rgb(11 107 133 / 0.08);
+    --band-stroke: rgb(11 107 133 / 0.3);
+    --skel-hi: #f3f6fa;
+
+    --sky-panel: rgb(255 255 255 / 0.8);
+    --sky-panel-border: rgb(15 23 42 / 0.1);
+    --sky-glow: rgb(11 107 133 / 0.25);
+    --sky-glow-soft: rgb(11 107 133 / 0.1);
+    --sky-nebula-a: rgb(14 165 233 / 0.1);
+    --sky-nebula-b: rgb(217 70 239 / 0.06);
+    --sky-star-opacity: 0;
+    --epoch-b: #be185d;
+    --epoch-b-soft: rgb(190 24 93 / 0.1);
+    --ok: #047857;
   }
 }
