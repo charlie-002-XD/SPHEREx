@@ -9,6 +9,8 @@ export interface MockOptions {
   height?: number;
   count?: number;
   seed?: number;
+  /** Days between consecutive frames. */
+  cadenceDays?: number;
 }
 
 function mulberry32(seed: number): () => number {
@@ -30,6 +32,9 @@ export function makeMockFramesResponse(opts: MockOptions = {}): FramesResponse {
   const height = opts.height ?? 48;
   const count = opts.count ?? 12;
   const rand = mulberry32(opts.seed ?? 42);
+  // One month per frame: detectors cycle every 6 frames, so each detector
+  // revisits after ~6 months, like the SPHEREx all-sky cadence.
+  const cadence = opts.cadenceDays ?? 365.25 / 12;
   const px = width * height;
   const scale = 0.05 / width; // deg per pixel, roughly matches fov 0.05
 
@@ -52,7 +57,7 @@ export function makeMockFramesResponse(opts: MockOptions = {}): FramesResponse {
       pixels[0] = NaN;
       pixels[px - 1] = Infinity;
     }
-    const mjd = 60200 + i * 91;
+    const mjd = 60200 + i * cadence;
     frames.push({
       id: `mock-${i.toString()}`,
       obs_mjd_start: mjd,

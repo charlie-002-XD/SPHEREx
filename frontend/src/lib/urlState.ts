@@ -6,6 +6,14 @@ import { apiModeSchema, type ApiMode } from "./types";
 import { isValidFov, parseDecToDeg, parseRaToDeg } from "./coords";
 import { isStretchKind, type StretchKind } from "./stretch";
 import { isColormapName, type ColormapName } from "./colormaps";
+import { DEFAULT_BAND_ID, isBandId } from "./bands";
+
+export const VIEWS = ["timelapse", "compare"] as const;
+export type ViewKind = (typeof VIEWS)[number];
+
+export function isViewKind(v: unknown): v is ViewKind {
+  return typeof v === "string" && (VIEWS as readonly string[]).includes(v);
+}
 
 export interface UrlState {
   ra: string;
@@ -17,6 +25,8 @@ export interface UrlState {
   fps: number;
   frame: number;
   embed: boolean;
+  view: ViewKind;
+  band: string;
 }
 
 export const DEFAULT_URL_STATE: UrlState = {
@@ -29,6 +39,8 @@ export const DEFAULT_URL_STATE: UrlState = {
   fps: 5,
   frame: 0,
   embed: false,
+  view: "timelapse",
+  band: DEFAULT_BAND_ID,
 };
 
 export const FPS_MIN = 1;
@@ -75,6 +87,11 @@ export function parseUrlState(search: string): UrlState {
   const embed = p.get("embed");
   st.embed = embed === "1" || embed === "true";
 
+  const view = p.get("view");
+  if (isViewKind(view)) st.view = view;
+  const band = p.get("band");
+  if (isBandId(band)) st.band = band;
+
   return st;
 }
 
@@ -89,6 +106,8 @@ export function serializeUrlState(st: UrlState): string {
   if (st.fps !== DEFAULT_URL_STATE.fps) p.set("fps", st.fps.toString());
   if (st.frame !== 0) p.set("frame", st.frame.toString());
   if (st.embed) p.set("embed", "1");
+  if (st.view !== DEFAULT_URL_STATE.view) p.set("view", st.view);
+  if (st.band !== DEFAULT_URL_STATE.band) p.set("band", st.band);
   const s = p.toString();
   return s === "" ? "" : `?${s}`;
 }

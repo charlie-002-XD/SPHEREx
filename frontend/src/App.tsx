@@ -42,6 +42,17 @@ import {
 } from "./components/spectrum/spectrumApi";
 import { makeMockSpectrum } from "./components/spectrum/mockSpectrum";
 import { FrameMetadata } from "./components/metadata/FrameMetadata";
+import { CompareView } from "./components/compare/CompareView";
+import { BandSelector } from "./components/compare/BandSelector";
+import { FindingsList } from "./components/compare/FindingsList";
+import type { PendingMark } from "./components/compare/EpochComparator";
+import { bandFrameCounts } from "./lib/bands";
+import {
+  createLocalFindingsClient,
+  type Finding,
+  type FindingKind,
+  type FindingsClient,
+} from "./lib/findings";
 import { useUrlState } from "./hooks/useUrlState";
 import { useFrames, type FramesResult } from "./hooks/useFrames";
 import { fetchTargets } from "./lib/api";
@@ -56,7 +67,7 @@ import { PRESET_TARGETS } from "./lib/presets";
 import { isStretchKind, STRETCH_KINDS } from "./lib/stretch";
 import { COLORMAP_NAMES, isColormapName } from "./lib/colormaps";
 import type { FramesResponse } from "./lib/types";
-import type { UrlState } from "./lib/urlState";
+import type { UrlState, ViewKind } from "./lib/urlState";
 
 const DEFAULT_API_BASE = (import.meta.env.VITE_API_BASE ?? "") as string;
 
@@ -82,6 +93,35 @@ function createMockSpectrumClient(): SpectrumClient {
     spectrum: (raDeg, decDeg) =>
       Promise.resolve(makeMockSpectrum(raDeg, decDeg)),
   };
+}
+
+const VIEW_OPTIONS: ReadonlyArray<{ id: ViewKind; label: string }> = [
+  { id: "timelapse", label: "Time-lapse" },
+  { id: "compare", label: "Compare A/B" },
+];
+
+function ViewSwitch(props: {
+  value: ViewKind;
+  onChange: (v: ViewKind) => void;
+}) {
+  return (
+    <div className="vsw">
+      <div className="ms-group" role="radiogroup" aria-label="Viewer">
+        {VIEW_OPTIONS.map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            role="radio"
+            aria-checked={props.value === o.id}
+            className={props.value === o.id ? "ms-opt ms-on" : "ms-opt"}
+            onClick={() => props.onChange(o.id)}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // Disclosure chevron for the collapsible panel sections.
@@ -118,6 +158,10 @@ interface ExplorerProps {
   embed: boolean;
   mockData?: FramesResponse;
   onPick: (raDeg: number, decDeg: number) => void;
+  findings: readonly Finding[];
+  pending: PendingMark | null;
+  onMark: (m: PendingMark | null) => void;
+  onSaveFinding: (kind: FindingKind, note: string) => Promise<Finding>;
   onResult: (r: FramesResult) => void;
   onRetry: () => void;
 }
@@ -199,39 +243,66 @@ function Explorer(props: ExplorerProps) {
   const width = res.response?.width ?? 64;
   const height = res.response?.height ?? 64;
   const current =
-    res.frames[Math.min(Math.max(url.frame, 0), res.frames.length - 1)] ??
-    null;
+    res.frames[Math.min(Math.max(url.frame, 0), res.frames.length - 1)] ?? null;
+
+  const compare = url.view === "compare" && !embed;
 
   return (
     <>
+      {!embed ? (
+        <ViewSwitch
+          value={url.view}
+          onChange={(v) => {
+            props.onMark(null);
+            setLocal((prev) => ({ ...prev, playing: false }));
+            setUrl({ view: v });
+          }}
+        />
+      ) : null}
       {res.status === "loading" ? (
         <p className="app-status" role="status">
           Updating…
         </p>
       ) : null}
-      <div
-        className="app-stage"
-        onClick={
-          embed
-            ? undefined
-            : canvasClickToSpectrum(
-                { frame: current, width, height },
-                props.onPick,
-              )
-        }
-      >
-        <TimeLapseCanvas
+      {compare ? (
+        <CompareView
           frames={res.frames}
           width={width}
           height={height}
-          unit={res.response?.unit}
           stretch={url.stretch}
           cmap={url.cmap}
-          transport={transport}
-          onTransport={onTransport}
-          embed={embed}
+          bandId={url.band}
+          findings={props.findings}
+          pending={props.pending}
+          onMark={props.onMark}
+          onSave={props.onSaveFinding}
+          onSpectrum={props.onPick}
         />
-      </div>
+      ) : (
+        <div
+          className="app-stage"
+          onClick={
+            embed
+              ? undefined
+              : canvasClickToSpectrum(
+                  { frame: current, width, height },
+                  props.onPick,
+                )
+          }
+        >
+          <TimeLapseCanvas
+            frames={res.frames}
+            width={width}
+            height={height}
+            unit={res.response?.unit}
+            stretch={url.stretch}
+            cmap={url.cmap}
+            transport={transport}
+            onTransport={onTransport}
+            embed={embed}
+          />
+        </div>
+      )}
       {!embed && res.response?.truncated === true ? (
         <p className="app-status">
           Series truncated at {res.frames.length} of{" "}
@@ -247,8 +318,7 @@ export function App(props: AppProps) {
   const [url, setUrl] = useUrlState();
   const [detector, setDetector] = useState<number | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
-  const [targets, setTargets] =
-    useState<readonly MenuTarget[]>(PRESET_TARGETS);
+  const [targets, setTargets] = useState<readonly MenuTarget[]>(PRESET_TARGETS);
   const [overlayOn, setOverlayOn] = useState(false);
   const [framesResult, setFramesResult] = useState<FramesResult>({
     status: "idle",
@@ -274,6 +344,63 @@ export function App(props: AppProps) {
     [apiBase, mockData],
   );
   const spec = useSpectrum(spectrumClient);
+
+  // The API contract has no findings endpoint yet, so findings persist in
+  // localStorage behind the FindingsClient interface.
+  const findingsClient = useMemo<FindingsClient>(
+    () => createLocalFindingsClient(),
+    [],
+  );
+  const [findings, setFindings] = useState<readonly Finding[]>([]);
+  const [pending, setPending] = useState<PendingMark | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    findingsClient
+      .list()
+      .then((fs) => {
+        if (alive) setFindings(fs);
+      })
+      .catch(() => {
+        /* unreadable storage: start empty */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [findingsClient]);
+
+  const saveFinding = useCallback(
+    async (kind: FindingKind, note: string): Promise<Finding> => {
+      if (pending === null) throw new Error("no pending mark");
+      const f = await findingsClient.add({
+        x: pending.x,
+        y: pending.y,
+        ra_deg: pending.raDeg,
+        dec_deg: pending.decDeg,
+        band: pending.band,
+        epoch: pending.epoch,
+        kind,
+        note,
+        frame_id: pending.frameId,
+      });
+      setFindings((prev) => [...prev, f]);
+      setPending(null);
+      return f;
+    },
+    [findingsClient, pending],
+  );
+
+  const removeFinding = useCallback(
+    (id: string) => {
+      findingsClient
+        .remove(id)
+        .then(() => setFindings((prev) => prev.filter((f) => f.id !== id)))
+        .catch(() => {
+          /* keep the list unchanged */
+        });
+    },
+    [findingsClient],
+  );
 
   // The preset menu prefers server-provided targets (/api/v1/targets) and
   // silently keeps the built-in presets when the backend is unreachable.
@@ -306,6 +433,7 @@ export function App(props: AppProps) {
   );
 
   const frames = framesResult.frames;
+  const bandCounts = useMemo(() => bandFrameCounts(frames), [frames]);
   const currentFrame =
     frames[Math.min(Math.max(url.frame, 0), Math.max(frames.length - 1, 0))] ??
     null;
@@ -334,6 +462,20 @@ export function App(props: AppProps) {
           onChange={(p) => {
             if (p.mode !== undefined) setUrl({ mode: p.mode, frame: 0 });
             if (p.detector !== undefined) setDetector(p.detector);
+          }}
+        />
+      </details>
+      <details className="app-group" open>
+        <summary className="app-group-title">
+          <h2 id="app-grp-bands">Spectral band</h2>
+          <GroupChevron />
+        </summary>
+        <BandSelector
+          value={url.band}
+          counts={bandCounts}
+          onChange={(b) => {
+            setPending(null);
+            setUrl({ band: b, view: "compare" });
           }}
         />
       </details>
@@ -390,6 +532,17 @@ export function App(props: AppProps) {
       </details>
       <details className="app-group" open>
         <summary className="app-group-title">
+          <h2 id="app-grp-findings">Findings ({findings.length})</h2>
+          <GroupChevron />
+        </summary>
+        <FindingsList
+          findings={findings}
+          storage={findingsClient.kind}
+          onRemove={removeFinding}
+        />
+      </details>
+      <details className="app-group" open>
+        <summary className="app-group-title">
           <h2 id="app-grp-overlay">Overlay</h2>
           <GroupChevron />
         </summary>
@@ -403,9 +556,7 @@ export function App(props: AppProps) {
         </label>
         {overlayOn ? (
           overlayPos !== null ? (
-            <Suspense
-              fallback={<p className="app-status">Loading overlay…</p>}
-            >
+            <Suspense fallback={<p className="app-status">Loading overlay…</p>}>
               <AladinOverlay
                 raDeg={overlayPos.raDeg}
                 decDeg={overlayPos.decDeg}
@@ -464,6 +615,10 @@ export function App(props: AppProps) {
         embed={url.embed}
         mockData={mockData}
         onPick={spec.requestAt}
+        findings={findings}
+        pending={pending}
+        onMark={setPending}
+        onSaveFinding={saveFinding}
         onResult={setFramesResult}
         onRetry={() => setRetryNonce((n) => n + 1)}
       />

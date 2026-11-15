@@ -99,16 +99,38 @@ describe("App integration", () => {
     const toggle = screen.getByRole("checkbox", {
       name: /catalog overlay/i,
     });
-    expect(
-      screen.queryByRole("group", { name: "Catalog layers" }),
-    ).toBeNull();
+    expect(screen.queryByRole("group", { name: "Catalog layers" })).toBeNull();
     fireEvent.click(toggle);
     // Lazy chunk mounts; the CDN script stays pending in jsdom, which is
     // fine — the section and its catalog toggles render regardless.
     await screen.findByRole("group", { name: "Catalog layers" });
     fireEvent.click(toggle);
-    expect(
-      screen.queryByRole("group", { name: "Catalog layers" }),
-    ).toBeNull();
+    expect(screen.queryByRole("group", { name: "Catalog layers" })).toBeNull();
+  });
+  it("compares two epochs, blinks, and saves a classified finding", async () => {
+    window.localStorage.clear();
+    window.history.replaceState(null, "", "/?view=compare&band=b1");
+    render(<App mockData={makeMockFramesResponse()} />);
+    const epochA = await screen.findByRole("img", { name: /^Epoch A/ });
+    expect(screen.getByRole("img", { name: /^Epoch B/ })).toBeTruthy();
+    expect(screen.getByRole("slider", { name: /divider/ })).toBeTruthy();
+    expect(screen.getByText(/Δt = /)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("radio", { name: "Blink" }));
+    expect(screen.getByText("0.50 s")).toBeTruthy();
+    expect(screen.queryByRole("slider", { name: /divider/ })).toBeNull();
+
+    const frame = epochA.parentElement;
+    if (frame === null) throw new Error("no comparator frame");
+    stubRect(frame);
+    fireEvent.click(frame, { clientX: 50, clientY: 150 });
+    const form = await screen.findByRole("form", { name: "New finding" });
+    expect(form.textContent).toContain("12");
+    fireEvent.click(screen.getByRole("radio", { name: "Planet" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save finding" }));
+    expect(await screen.findByText(/Planet · \(12, 36\)/)).toBeTruthy();
+    expect(window.localStorage.getItem("spherex-blink.findings.v1")).toContain(
+      "planet",
+    );
   });
 });

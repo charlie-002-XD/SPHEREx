@@ -81,6 +81,19 @@
   --scrim: rgb(0 0 0 / 0.7);
   --scrim-fg: #f2f4f7;
   --scrim-warn: #fdc970;
+
+  /* Epoch comparator (sky viewer). The stage is an image area, so it stays
+     dark in both schemes like the scrim. Band swatches are data colors
+     (near-IR windows from short to long wavelength), used for swatches,
+     markers and the spectrum scale only, never for text. */
+  --stage-bg: #05070b;
+  --stage-grid: rgb(230 236 245 / 0.09);
+  --star: rgb(205 222 255 / 0.85);
+  --star-dim: rgb(205 222 255 / 0.4);
+  --band-1: #7dd3fc;
+  --band-2: #a5f3fc;
+  --band-3: #fcd34d;
+  --band-4: #fb923c;
 }
 
 @media (prefers-color-scheme: light) {
