@@ -31,6 +31,7 @@
 }
 .sky-bg::before {
   content: "";
+  opacity: var(--sky-star-opacity);
   background-image:
     radial-gradient(1px 1px at 12% 18%, var(--star), transparent 60%),
     radial-gradient(1px 1px at 67% 41%, var(--star-dim), transparent 60%),
@@ -53,6 +54,11 @@
     17rem 17rem,
     23rem 23rem;
   animation: sky-twinkle 6s ease-in-out infinite alternate;
+}
+@media (prefers-color-scheme: light) {
+  .sky-bg::after {
+    display: none;
+  }
 }
 @keyframes sky-twinkle {
   from {
@@ -120,6 +126,51 @@
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--fg-dim);
+}
+/* Disclosure header of a collapsible side panel (SkyPanel). */
+.sky-panel-toggle {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--target);
+  margin: calc(var(--space-3) * -1) 0;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: none;
+}
+.sky-panel-toggle:hover {
+  color: var(--fg);
+}
+.sky-panel-toggle:focus-visible {
+  outline-offset: 2px;
+}
+.sky-panel-chev {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  transition: transform var(--dur-2) var(--ease);
+}
+.sky-panel-closed .sky-panel-chev {
+  transform: rotate(-90deg);
+}
+.sky-panel-closed .sky-card-title {
+  margin-bottom: 0;
+}
+.sky-panel-body {
+  animation: sky-panel-in var(--dur-2) var(--ease);
+}
+@keyframes sky-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
 }
 .sky-card-title .sky-count {
   color: var(--fg-faint);
@@ -202,7 +253,7 @@
   order: 2;
 }
 .app-sky .sky-left .app-controls {
-  padding: var(--space-1) var(--space-3) var(--space-2);
+  margin-inline: calc(var(--space-1) * -1);
 }
 
 /* Toast: transient, never intercepts pointer input. */
@@ -302,4 +353,21 @@
     grid-template-rows: minmax(0, 1fr);
     grid-template-areas: "left center right";
   }
+}
+
+/* Demo fallback notice: inline text button keeps the 44px target. */
+.sky-fallback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+.sky-link {
+  min-height: var(--target);
+  padding: 0 var(--space-2);
+  font-size: inherit;
+  color: var(--accent);
+  background: transparent;
+  border: none;
+  text-decoration: underline;
 }

@@ -1,5 +1,6 @@
 // Comparator transport: slider / blink segmented control, blink play-pause
-// and the blink interval (seconds per epoch).
+// and the blink interval (seconds per epoch). Every control stays visible
+// and enabled from the first image; Play in slider mode starts blinking.
 import type { CompareMode } from "./EpochComparator";
 
 export const BLINK_MIN_MS = 100;
@@ -52,17 +53,17 @@ export function CompareControls(props: CompareControlsProps) {
           </button>
         ))}
       </div>
-      <div className={blink ? "cmp-blinkctl" : "cmp-blinkctl cmp-off"}>
+      <div className="cmp-blinkctl">
         <button
           type="button"
           className="tl-btn tl-btn-play"
-          aria-label={props.playing ? "Pause blink" : "Play blink"}
-          aria-pressed={props.playing}
-          disabled={!blink || props.disabled === true}
-          onClick={() => props.onPlaying(!props.playing)}
+          aria-label={blink && props.playing ? "Pause blink" : "Play blink"}
+          aria-pressed={blink && props.playing}
+          disabled={props.disabled === true}
+          onClick={() => props.onPlaying(!(blink && props.playing))}
         >
           <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-            {props.playing ? (
+            {blink && props.playing ? (
               <path
                 d="M6 4v8M10 4v8"
                 fill="none"
@@ -89,7 +90,7 @@ export function CompareControls(props: CompareControlsProps) {
             max={BLINK_MAX_MS}
             step={50}
             value={props.intervalMs}
-            disabled={!blink || props.disabled === true}
+            disabled={props.disabled === true}
             aria-label="Blink interval"
             aria-valuetext={`${(props.intervalMs / 1000).toFixed(2)} seconds`}
             onChange={(e) => props.onInterval(Number(e.currentTarget.value))}

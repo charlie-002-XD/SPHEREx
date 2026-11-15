@@ -439,9 +439,6 @@
   gap: var(--space-2);
   transition: opacity var(--dur-2) var(--ease);
 }
-.cmp-off {
-  opacity: 0.45;
-}
 .cmp-speed {
   flex: 1 1 auto;
   display: flex;
@@ -743,6 +740,23 @@
   font-family: var(--font-mono);
   color: var(--band);
   white-space: nowrap;
+}
+/* Light scheme: band swatches are too pale for text on white; show them as
+   a dot beside neutral text instead. */
+@media (prefers-color-scheme: light) {
+  .fl-band {
+    color: var(--fg-dim);
+  }
+  .fl-band::before {
+    content: "";
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-right: var(--space-1);
+    border-radius: 50%;
+    background: var(--band);
+    box-shadow: 0 0 0 1px var(--border-strong);
+  }
 }
 .fl-note {
   order: 1;

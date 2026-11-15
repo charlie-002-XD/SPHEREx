@@ -12,7 +12,9 @@ import {
   useMemo,
   useState,
 } from "react";
-import { AppShell } from "./components/layout/AppShell";
+import { AppShell, DESKTOP_QUERY } from "./components/layout/AppShell";
+import { SkyPanel } from "./components/layout/SkyPanel";
+import { useMediaQuery } from "./components/layout/useMediaQuery";
 import { AboutDialog } from "./components/about/AboutDialog";
 import { FirstRunHint } from "./components/about/FirstRunHint";
 import { EmbedCredit } from "./components/about/EmbedCredit";
@@ -68,11 +70,15 @@ import {
   parseRaToDeg,
 } from "./lib/coords";
 import { makeMockFramesResponse } from "./lib/mock";
-import { PRESET_TARGETS } from "./lib/presets";
+import { DEMO_TARGET, isDemoTarget, PRESET_TARGETS } from "./lib/presets";
 import { isStretchKind, STRETCH_KINDS } from "./lib/stretch";
 import { COLORMAP_NAMES, isColormapName } from "./lib/colormaps";
 import type { FramesResponse } from "./lib/types";
 import type { UrlState, ViewKind } from "./lib/urlState";
+
+// How long the demo target waits for the backend before falling back to
+// the bundled series.
+const DEMO_TIMEOUT_MS = 8000;
 
 const DEFAULT_API_BASE = (import.meta.env.VITE_API_BASE ?? "") as string;
 
@@ -179,6 +185,14 @@ function Explorer(props: ExplorerProps) {
     loop: true,
     blink: false,
   });
+  // Demo target only: if the backend errors or does not answer in time,
+  // show the bundled mock series of the same position instead of an error.
+  const demo = isDemoTarget(url.ra, url.dec);
+  const [fallback, setFallback] = useState(false);
+  const demoMock = useMemo(
+    () => (fallback && demo ? makeMockFramesResponse() : undefined),
+    [fallback, demo],
+  );
   const res = useFrames(
     apiBase,
     {
@@ -189,8 +203,20 @@ function Explorer(props: ExplorerProps) {
       detector,
       maxFrames: 60,
     },
-    mockData,
+    mockData ?? demoMock,
   );
+  const usingFallback = demoMock !== undefined && mockData === undefined;
+
+  useEffect(() => {
+    if (!demo || fallback || mockData !== undefined) return;
+    if (res.status === "error") {
+      setFallback(true);
+      return;
+    }
+    if (res.status !== "loading") return;
+    const id = window.setTimeout(() => setFallback(true), DEMO_TIMEOUT_MS);
+    return () => window.clearTimeout(id);
+  }, [demo, fallback, mockData, res.status]);
 
   const { onResult } = props;
   useEffect(() => onResult(res), [res, onResult]);
@@ -268,6 +294,19 @@ function Explorer(props: ExplorerProps) {
           Updating…
         </p>
       ) : null}
+      {usingFallback ? (
+        <p className="app-status sky-fallback" role="status">
+          Backend unavailable: showing the bundled demo series for{" "}
+          {DEMO_TARGET.label}.{" "}
+          <button
+            type="button"
+            className="sky-link"
+            onClick={() => setFallback(false)}
+          >
+            Retry
+          </button>
+        </p>
+      ) : null}
       {compare ? (
         <CompareView
           frames={res.frames}
@@ -318,6 +357,31 @@ function Explorer(props: ExplorerProps) {
 export function App(props: AppProps) {
   const { apiBase = DEFAULT_API_BASE } = props;
   const [url, setUrl] = useUrlState();
+  const desktop = useMediaQuery(DESKTOP_QUERY);
+  const [panels, setPanels] = useState(() => ({
+    bands: true,
+    controls: desktop,
+    report: true,
+    findings: desktop,
+  }));
+  const togglePanel = useCallback(
+    (k: keyof typeof panels) => (open: boolean) =>
+      setPanels((p) => ({ ...p, [k]: open })),
+    [],
+  );
+
+  // No position in the URL: load the demo target so the viewer never
+  // opens on the empty "Point at the sky" state.
+  useEffect(() => {
+    if (url.ra === "" && url.dec === "") {
+      setUrl({
+        ra: DEMO_TARGET.ra,
+        dec: DEMO_TARGET.dec,
+        fov: DEMO_TARGET.fov,
+        frame: 0,
+      });
+    }
+  }, [url.ra, url.dec, setUrl]);
   const [detector, setDetector] = useState<number | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
   const [targets, setTargets] = useState<readonly MenuTarget[]>(PRESET_TARGETS);
@@ -356,6 +420,10 @@ export function App(props: AppProps) {
   const [findings, setFindings] = useState<readonly Finding[]>([]);
   const [pending, setPending] = useState<PendingMark | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (pending !== null) setPanels((p) => ({ ...p, report: true }));
+  }, [pending]);
 
   useEffect(() => {
     if (toast === null) return;
@@ -574,10 +642,12 @@ export function App(props: AppProps) {
 
   const left = (
     <>
-      <section className="sky-card sky-panel" aria-labelledby="app-grp-bands">
-        <h2 id="app-grp-bands" className="sky-card-title">
-          Near-IR bands
-        </h2>
+      <SkyPanel
+        id="app-grp-bands"
+        title="Near-IR bands"
+        open={panels.bands}
+        onToggle={togglePanel("bands")}
+      >
         <BandSelector
           value={url.band}
           counts={bandCounts}
@@ -586,8 +656,15 @@ export function App(props: AppProps) {
             setUrl({ band: b, view: "compare" });
           }}
         />
-      </section>
-      <section className="sky-card">{panel}</section>
+      </SkyPanel>
+      <SkyPanel
+        id="app-grp-controls"
+        title="Controls"
+        open={panels.controls}
+        onToggle={togglePanel("controls")}
+      >
+        {panel}
+      </SkyPanel>
     </>
   );
 
@@ -596,6 +673,10 @@ export function App(props: AppProps) {
       pending={pending}
       findings={findings}
       storage={findingsClient.kind}
+      reportOpen={panels.report}
+      findingsOpen={panels.findings}
+      onToggleReport={togglePanel("report")}
+      onToggleFindings={togglePanel("findings")}
       onSave={async (kind, note) => {
         await saveFinding(kind, note);
       }}

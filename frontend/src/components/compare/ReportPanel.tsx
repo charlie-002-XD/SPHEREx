@@ -1,14 +1,20 @@
 // Right column of the sky layout: "New report" (help text, or the finding
-// form once a point is marked) and the saved findings list.
+// form once a point is marked) and the saved findings list, each in a
+// collapsible panel.
 import { FindingForm } from "./FindingForm";
 import { FindingsList } from "./FindingsList";
 import type { PendingMark } from "./EpochComparator";
+import { SkyPanel } from "../layout/SkyPanel";
 import type { Finding, FindingKind } from "../../lib/findings";
 
 export interface ReportPanelProps {
   pending: PendingMark | null;
   findings: readonly Finding[];
   storage: "local" | "remote";
+  reportOpen: boolean;
+  findingsOpen: boolean;
+  onToggleReport: (open: boolean) => void;
+  onToggleFindings: (open: boolean) => void;
   onSave: (kind: FindingKind, note: string) => Promise<void>;
   onCancel: () => void;
   onSpectrum: (raDeg: number, decDeg: number) => void;
@@ -18,10 +24,12 @@ export interface ReportPanelProps {
 export function ReportPanel(props: ReportPanelProps) {
   return (
     <>
-      <section className="sky-card sky-panel" aria-labelledby="rp-new">
-        <h2 id="rp-new" className="sky-card-title">
-          New report
-        </h2>
+      <SkyPanel
+        id="rp-new"
+        title="New report"
+        open={props.reportOpen}
+        onToggle={props.onToggleReport}
+      >
         {props.pending !== null ? (
           <FindingForm
             key={`${props.pending.frameId}-${props.pending.x}-${props.pending.y}`}
@@ -37,26 +45,30 @@ export function ReportPanel(props: ReportPanelProps) {
             coordinates.
           </p>
         )}
-      </section>
-      <section
-        className="sky-card sky-panel sky-findings"
-        aria-labelledby="rp-findings"
-      >
-        <h2 id="rp-findings" className="sky-card-title">
-          <span>
+      </SkyPanel>
+      <SkyPanel
+        id="rp-findings"
+        className="sky-findings"
+        title={
+          <>
             Findings{" "}
             <span className="sky-count">({props.findings.length})</span>
-          </span>
+          </>
+        }
+        aside={
           <span className="sky-status">
             {props.storage === "local" ? "This browser" : "Server"}
           </span>
-        </h2>
+        }
+        open={props.findingsOpen}
+        onToggle={props.onToggleFindings}
+      >
         <FindingsList
           findings={props.findings}
           storage={props.storage}
           onRemove={props.onRemove}
         />
-      </section>
+      </SkyPanel>
     </>
   );
 }

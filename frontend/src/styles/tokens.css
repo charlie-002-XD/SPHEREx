@@ -120,12 +120,11 @@
   }
 }
 
-/* Sky theme (.app-sky): the dark space look of the comparator layout. The
-   whole app shell is an image instrument here, so it stays dark in both
-   color schemes, like the stage and scrim. Same token names as :root so
-   every component inherits it; contrast is asserted in tokens.test.ts. */
+/* Sky theme (.app-sky): the space look of the comparator layout. Dark by
+   default with a light variant under prefers-color-scheme; the image stage
+   and scrim stay dark in both. Same token names as :root so every
+   component inherits it; contrast is asserted in tokens.test.ts. */
 .app-sky {
-  color-scheme: dark;
   --bg: #03050c;
   --bg-raised: #070b17;
   --bg-inset: #02040a;
@@ -152,7 +151,43 @@
   --sky-glow-soft: rgb(95 212 234 / 0.12);
   --sky-nebula-a: rgb(56 189 248 / 0.12);
   --sky-nebula-b: rgb(217 70 239 / 0.1);
+  --sky-star-opacity: 1;
   --epoch-b: #f9a8d4;
   --epoch-b-soft: rgb(244 114 182 / 0.15);
   --ok: #34d399;
+}
+
+@media (prefers-color-scheme: light) {
+  .app-sky {
+    --bg: #f3f6fa;
+    --bg-raised: #ffffff;
+    --bg-inset: #e9eef5;
+    --bg-hover: #e1e8f1;
+    --fg: #0f172a;
+    --fg-dim: #44516a;
+    --fg-faint: #586377;
+    --border: #d5dde8;
+    --border-strong: #6b778a;
+    --accent: #0b6b85;
+    --accent-fg: #ffffff;
+    --accent-soft: #dcf1f7;
+    --danger: #b3261e;
+    --warn: #8a5300;
+    --focus: #0b6b85;
+    --shadow: 0 1rem 2rem rgb(15 23 42 / 0.1);
+    --band-fill: rgb(11 107 133 / 0.08);
+    --band-stroke: rgb(11 107 133 / 0.3);
+    --skel-hi: #f3f6fa;
+
+    --sky-panel: rgb(255 255 255 / 0.8);
+    --sky-panel-border: rgb(15 23 42 / 0.1);
+    --sky-glow: rgb(11 107 133 / 0.25);
+    --sky-glow-soft: rgb(11 107 133 / 0.1);
+    --sky-nebula-a: rgb(14 165 233 / 0.1);
+    --sky-nebula-b: rgb(217 70 239 / 0.06);
+    --sky-star-opacity: 0;
+    --epoch-b: #be185d;
+    --epoch-b-soft: rgb(190 24 93 / 0.1);
+    --ok: #047857;
+  }
 }

@@ -3,7 +3,7 @@
 // a backend, a click on the cutout canvas opens the spectrum panel with
 // data, and the Overlay toggle mounts/unmounts the lazy Aladin overlay.
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../../src/App";
 import { makeMockFramesResponse } from "../../src/lib/mock";
 
@@ -48,6 +48,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   window.history.replaceState(null, "", "/");
 });
 
@@ -135,5 +136,54 @@ describe("App integration", () => {
     expect(window.localStorage.getItem("spherex-blink.findings.v1")).toContain(
       "planet",
     );
+  });
+
+  it("opens on the demo target and falls back to bundled frames when the backend fails", async () => {
+    window.localStorage.clear();
+    window.history.replaceState(null, "", "/");
+    vi.stubGlobal("fetch", () =>
+      Promise.reject(new TypeError("Failed to fetch")),
+    );
+    render(<App />);
+    expect(await screen.findByText(/Backend unavailable/)).toBeTruthy();
+    expect(await screen.findByRole("img", { name: /^Epoch A/ })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /^Epoch B/ })).toBeTruthy();
+    expect(window.location.search).toContain("ra=");
+    expect(screen.queryByText("Point at the sky")).toBeNull();
+  });
+
+  it("keeps Before/After and Blink controls live; Play starts blinking", async () => {
+    window.history.replaceState(null, "", "/?view=compare&band=b1");
+    render(<App mockData={makeMockFramesResponse()} />);
+    await screen.findByRole("img", { name: /^Epoch A/ });
+    const before = screen.getByRole("radio", { name: "Before / After" });
+    expect(before.getAttribute("aria-checked")).toBe("true");
+    const play = screen.getByRole("button", { name: "Play blink" });
+    expect((play as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(play);
+    expect(
+      screen.getByRole("radio", { name: "Blink" }).getAttribute("aria-checked"),
+    ).toBe("true");
+    expect(screen.getByRole("button", { name: "Pause blink" })).toBeTruthy();
+  });
+
+  it("collapses and expands the side panels", async () => {
+    window.history.replaceState(null, "", "/?view=compare");
+    render(<App mockData={makeMockFramesResponse()} />);
+    await screen.findByRole("img", { name: /^Epoch A/ });
+    const bands = screen.getByRole("button", { name: "Near-IR bands" });
+    expect(bands.getAttribute("aria-expanded")).toBe("true");
+    fireEvent.click(bands);
+    expect(bands.getAttribute("aria-expanded")).toBe("false");
+    expect(
+      screen.queryByRole("radiogroup", { name: "Near-infrared band" }),
+    ).toBeNull();
+    fireEvent.click(bands);
+    expect(
+      screen.getByRole("radiogroup", { name: "Near-infrared band" }),
+    ).toBeTruthy();
+    const report = screen.getByRole("button", { name: "New report" });
+    fireEvent.click(report);
+    expect(report.getAttribute("aria-expanded")).toBe("false");
   });
 });

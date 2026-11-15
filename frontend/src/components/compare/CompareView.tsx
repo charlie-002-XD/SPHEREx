@@ -50,25 +50,35 @@ export function CompareView(props: CompareViewProps) {
     [props.frames, band],
   );
 
+  const controls = (
+    <CompareControls
+      mode={mode}
+      onMode={setMode}
+      playing={playing}
+      onPlaying={(p) => {
+        if (p && mode !== "blink") setMode("blink");
+        setPlaying(p);
+      }}
+      intervalMs={intervalMs}
+      onInterval={setIntervalMs}
+      disabled={pair === null || pair.b === null}
+    />
+  );
+
   if (band === null || pair === null) {
     return (
-      <p className="cmp-empty" role="status">
-        No frames in this band for this position. Pick another band.
-      </p>
+      <>
+        {controls}
+        <p className="cmp-empty" role="status">
+          No frames in this band for this position. Pick another band.
+        </p>
+      </>
     );
   }
 
   return (
     <>
-      <CompareControls
-        mode={mode}
-        onMode={setMode}
-        playing={playing}
-        onPlaying={setPlaying}
-        intervalMs={intervalMs}
-        onInterval={setIntervalMs}
-        disabled={pair.b === null}
-      />
+      {controls}
       <EpochComparator
         pair={pair}
         band={band}
