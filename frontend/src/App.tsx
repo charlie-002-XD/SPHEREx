@@ -13,6 +13,9 @@ import {
   useState,
 } from "react";
 import { AppShell } from "./components/layout/AppShell";
+import { AboutDialog } from "./components/about/AboutDialog";
+import { FirstRunHint } from "./components/about/FirstRunHint";
+import { EmbedCredit } from "./components/about/EmbedCredit";
 import type { MenuTarget } from "./components/layout/TargetMenu";
 import {
   EmptyState,
@@ -425,6 +428,9 @@ export function App(props: AppProps) {
       embed={url.embed}
       targets={targets}
       onSelectTarget={submitCoords}
+      headerActions={<AboutDialog />}
+      notice={<FirstRunHint />}
+      credit={<EmbedCredit />}
       search={
         <CoordinateSearchBar
           value={{ ra: url.ra, dec: url.dec, fov: url.fov }}

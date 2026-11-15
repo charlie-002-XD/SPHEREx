@@ -22,6 +22,12 @@ export interface AppShellProps {
   panel: ReactNode;
   /** Docked secondary view (spectrum); null when closed. */
   drawer?: ReactNode;
+  /** Extra header actions rendered after the target menu (About button). */
+  headerActions?: ReactNode;
+  /** One-line notice under the header (first-visit hint); null when none. */
+  notice?: ReactNode;
+  /** Attribution line rendered in embed mode only. */
+  credit?: ReactNode;
   children: ReactNode;
 }
 
@@ -35,6 +41,7 @@ export function AppShell(props: AppShellProps) {
     return (
       <div className="app app-embed">
         <main className="app-main">{children}</main>
+        {props.credit ?? null}
       </div>
     );
   }
@@ -61,8 +68,12 @@ export function AppShell(props: AppShellProps) {
           </svg>
           SPHEREx Blink
         </h1>
-        <TargetMenu targets={targets} onSelect={onSelectTarget} />
+        <div className="app-actions">
+          <TargetMenu targets={targets} onSelect={onSelectTarget} />
+          {props.headerActions ?? null}
+        </div>
       </header>
+      {props.notice ?? null}
       <div className="app-body">
         <div
           className={drawer !== null ? "app-view app-view-drawer" : "app-view"}
