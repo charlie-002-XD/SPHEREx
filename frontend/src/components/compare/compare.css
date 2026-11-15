@@ -765,4 +765,7 @@
   .app-sky .cmp-stage {
     min-height: 18rem;
   }
+  .app-sky .sky-main:has(.cmp-stage) {
+    overflow-y: visible;
+  }
 }

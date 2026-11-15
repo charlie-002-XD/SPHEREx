@@ -185,7 +185,7 @@
 }
 .sky-drawer {
   order: 1;
-  overflow: hidden;
+  overflow-y: auto;
 }
 .sky-left,
 .sky-right {
@@ -259,21 +259,25 @@
     gap: var(--space-4);
     overflow: hidden;
   }
+  /* The centre column scrolls as a whole, so an open spectrum drawer
+     never squeezes the viewer below its floor. */
   .sky-center {
     grid-area: center;
     min-height: 0;
+    overflow-y: auto;
   }
   .sky-center > .app-search {
     order: -1;
   }
   .sky-main {
-    flex: 1 1 auto;
+    flex: 1 0 auto;
     min-height: 0;
-    overflow-y: auto;
   }
+  /* Room for the 240px chart floor plus header and summary; scrolls if
+     the panel still needs more. */
   .sky-drawer {
     flex: none;
-    height: var(--drawer-h);
+    height: max(var(--drawer-h), 22rem);
   }
   .sky-left {
     grid-area: left;
