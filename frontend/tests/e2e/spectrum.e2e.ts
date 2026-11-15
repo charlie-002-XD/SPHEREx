@@ -34,16 +34,13 @@ test("canvas click opens the spectrum panel with every mock point", async ({
 test("controls stay clickable while the spectrum panel is open", async ({
   page,
 }) => {
-  // Known defect being fixed in the parallel redesign: spectrum panel
-  // covers controls (f6). Remove this marker once f6 lands.
-  test.fail();
   await page.goto(mockUrl("ra=133.795&dec=-7.245&fov=0.05"));
   await frameCanvas(page).click();
   await expect(
     page.getByRole("complementary", { name: "Spectrum panel" }),
   ).toBeVisible();
 
-  // The fixed spectrum panel must not intercept the primary controls.
+  // The docked spectrum panel must not intercept the primary controls.
   await expectNotCovered(
     page.getByRole("button", { name: "Load time-lapse" }),
     "Go button",

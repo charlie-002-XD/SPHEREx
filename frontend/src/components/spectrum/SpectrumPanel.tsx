@@ -12,6 +12,7 @@ import {
   bandRects,
   detectorsPresent,
   flagCounts,
+  layoutBandLabels,
   prepareSpectrum,
 } from "./prepare";
 import {
@@ -92,13 +93,24 @@ function buildChart(
     ctx.strokeStyle = bandStroke;
     ctx.lineWidth = 1;
     ctx.font = `11px ${family}`;
+    // Labels stagger onto rows (or hide when even that collides) so
+    // adjacent bands like H2O/CH4 never overprint on narrow charts.
+    const labels = new Map(
+      layoutBandLabels(rects, (t) => ctx.measureText(t).width).map((l) => [
+        l.key,
+        l,
+      ]),
+    );
     for (const r of rects) {
       ctx.fillRect(r.x0, bbox.top, r.x1 - r.x0, bbox.height);
       ctx.strokeRect(r.x0 + 0.5, bbox.top, r.x1 - r.x0 - 1, bbox.height);
-      ctx.save();
-      ctx.fillStyle = fg;
-      ctx.fillText(r.label, r.x0 + 4, bbox.top + 14);
-      ctx.restore();
+      const l = labels.get(r.key);
+      if (l !== undefined) {
+        ctx.save();
+        ctx.fillStyle = fg;
+        ctx.fillText(l.label, l.x, bbox.top + 14 + l.row * 14);
+        ctx.restore();
+      }
     }
     ctx.restore();
   };

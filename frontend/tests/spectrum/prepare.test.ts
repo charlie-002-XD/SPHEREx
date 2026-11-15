@@ -4,7 +4,9 @@ import {
   bandRects,
   detectorsPresent,
   flagCounts,
+  layoutBandLabels,
   prepareSpectrum,
+  type BandRect,
 } from "../../src/components/spectrum/prepare";
 import { makeMockSpectrum } from "../../src/components/spectrum/mockSpectrum";
 import type { SpectrumPoint } from "../../src/components/spectrum/types";
@@ -150,5 +152,73 @@ describe("bandRects", () => {
       5,
     );
     expect(rects).toEqual([]);
+  });
+});
+
+describe("layoutBandLabels", () => {
+  const rect = (key: string, x0: number, x1: number): BandRect => ({
+    key,
+    label: key.toUpperCase(),
+    x0,
+    x1,
+  });
+  const w30 = () => 30; // every label measures 30 px
+
+  it("keeps well-separated labels on the top row", () => {
+    const ls = layoutBandLabels([rect("a", 10, 40), rect("b", 200, 240)], w30);
+    expect(ls.map((l) => [l.key, l.row])).toEqual([
+      ["a", 0],
+      ["b", 0],
+    ]);
+  });
+
+  it("staggers an adjacent label (H2O/CH4 case) onto the next row", () => {
+    // h2o's label spans 104-134; ch4 anchored at 109 collides -> row 1.
+    const ls = layoutBandLabels(
+      [rect("h2o", 100, 140), rect("ch4", 105, 150)],
+      w30,
+    );
+    expect(ls.find((l) => l.key === "h2o")?.row).toBe(0);
+    expect(ls.find((l) => l.key === "ch4")?.row).toBe(1);
+  });
+
+  it("drops a label that collides on every row", () => {
+    const ls = layoutBandLabels(
+      [rect("a", 0, 20), rect("b", 10, 30), rect("c", 20, 40)],
+      w30,
+      2,
+    );
+    expect(ls.map((l) => l.key)).toEqual(["a", "b"]);
+    expect(ls.map((l) => l.row)).toEqual([0, 1]);
+  });
+
+  it("never emits two labels closer than the gap on the same row", () => {
+    // Narrow-chart stress: five bands squeezed together, wide labels.
+    const rects = [
+      rect("a", 0, 30),
+      rect("b", 12, 42),
+      rect("c", 24, 54),
+      rect("d", 36, 66),
+      rect("e", 48, 78),
+    ];
+    for (const maxRows of [1, 2, 3]) {
+      const gap = 6;
+      const width = 60;
+      const ls = layoutBandLabels(rects, () => width, maxRows, gap);
+      const byRow = new Map<number, typeof ls>();
+      for (const l of ls) {
+        const row = byRow.get(l.row) ?? [];
+        row.push(l);
+        byRow.set(l.row, row);
+      }
+      for (const row of byRow.values()) {
+        const sorted = [...row].sort((p, q) => p.x - q.x);
+        for (let i = 1; i < sorted.length; i++) {
+          expect(sorted[i]!.x - sorted[i - 1]!.x).toBeGreaterThanOrEqual(
+            width + gap,
+          );
+        }
+      }
+    }
   });
 });

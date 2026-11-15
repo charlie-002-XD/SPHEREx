@@ -61,8 +61,10 @@
   --fg: #e6e8eb;
   --fg-dim: #a2a9b3;
   --fg-faint: #858d98;
-  --border: #22272e; /* hairline */
-  --border-strong: #3a414b; /* inputs, segmented groups */
+  --border: #22272e; /* hairline (decorative only) */
+  /* Interactive boundaries (inputs, segmented groups, pills): >= 3:1 on
+     every surface per WCAG 1.4.11; asserted in tokens.test.ts. */
+  --border-strong: #66707d;
   --accent: #8ab4f8;
   --accent-fg: #0b0d10; /* text on accent */
   --accent-soft: #1c2a40; /* active state background */
@@ -91,7 +93,7 @@
     --fg-dim: #4b525c;
     --fg-faint: #656c77;
     --border: #e0e3e8;
-    --border-strong: #c5cad2;
+    --border-strong: #788089;
     --accent: #2858b8;
     --accent-fg: #ffffff;
     --accent-soft: #e3ebfa;

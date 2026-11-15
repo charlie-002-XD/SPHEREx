@@ -13,13 +13,6 @@ import {
 test("overlay toggle mounts, degrades gracefully and unmounts", async ({
   page,
 }) => {
-  // Known app-side defect found by this test: AladinOverlay's load effect
-  // has `status` in its deps, so setStatus("loading") re-runs it and marks
-  // its own load handlers disposed — the status never reaches "error" (or
-  // "ready") and the fallback below is never rendered ("Loading Aladin
-  // Lite…" forever). src/ is outside this task's scope; flagged for the
-  // f6/integration agents. Remove this marker when fixed.
-  test.fail();
   await page.goto(mockUrl("ra=133.795&dec=-7.245&fov=0.05"));
   const canvas = frameCanvas(page);
   await expect(canvas).toBeVisible();

@@ -310,7 +310,7 @@ export function TimeLapseCanvas(props: TimeLapseCanvasProps) {
             <button
               type="button"
               className="tl-btn tl-btn-text"
-              aria-label="Toggle blink comparator"
+              aria-label="A/B: toggle blink comparator"
               aria-pressed={transport.blink}
               title="Blink A/B (B)"
               onClick={() => onTransport({ blink: !transport.blink })}
@@ -321,7 +321,7 @@ export function TimeLapseCanvas(props: TimeLapseCanvasProps) {
               <button
                 type="button"
                 className="tl-btn tl-btn-text num"
-                aria-label="Set blink reference to current frame"
+                aria-label={`A=${anchor + 1}: set blink reference to current frame`}
                 title="Anchor frame A to the current frame"
                 onClick={() => setBlinkA(frameIndex)}
               >

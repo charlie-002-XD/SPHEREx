@@ -109,11 +109,13 @@ export async function canvasPixels(locator: Locator): Promise<CanvasPixels> {
 
 // Asserts the element is the topmost hit target at the centre of its box —
 // i.e. it is not covered by an overlaying panel — using
-// document.elementFromPoint in the page.
+// document.elementFromPoint in the page. The element is scrolled into view
+// first: being below the fold is not the same as being covered.
 export async function expectNotCovered(
   locator: Locator,
   description: string,
 ): Promise<void> {
+  await locator.scrollIntoViewIfNeeded();
   const result = await locator.evaluate((el) => {
     const r = el.getBoundingClientRect();
     const x = r.left + r.width / 2;

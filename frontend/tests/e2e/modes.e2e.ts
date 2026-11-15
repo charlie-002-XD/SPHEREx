@@ -10,7 +10,7 @@ import {
   test,
 } from "./fixtures";
 
-const MODES = [/Raw/, /Diff/, /Co-add/, /Det stack/] as const;
+const MODES = [/Raw/, /Diff/, /Co-add/, /Stack/] as const;
 
 test("raw, difference, co-add and detector stack all render", async ({
   page,

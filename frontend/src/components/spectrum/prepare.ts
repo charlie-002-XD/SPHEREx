@@ -101,3 +101,42 @@ export function bandRects(
   }
   return out;
 }
+
+export interface BandLabel {
+  key: string;
+  label: string;
+  x: number;
+  // Stagger row; the caller turns it into a y offset. 0 is the top row.
+  row: number;
+}
+
+// Assigns band labels to slots on staggered rows so no two labels overlap,
+// whatever the chart width. Greedy left-to-right: each label is anchored
+// at its band's left edge and takes the first row whose previous label
+// ends at least `gap` px earlier (widths come from the caller's measurer,
+// e.g. ctx.measureText). Labels that fit on no row are dropped — the band
+// shading and the Bands toggle/legend still describe them. Pure, so the
+// collision rules are unit-testable without a canvas.
+export function layoutBandLabels(
+  rects: readonly BandRect[],
+  measure: (label: string) => number,
+  maxRows = 2,
+  gap = 6,
+): BandLabel[] {
+  const sorted = [...rects].sort((a, b) => a.x0 - b.x0);
+  const rowEnd: number[] = [];
+  const out: BandLabel[] = [];
+  for (const r of sorted) {
+    const x = r.x0 + 4;
+    const w = measure(r.label);
+    if (!Number.isFinite(w) || w <= 0) continue;
+    for (let row = 0; row < maxRows; row++) {
+      if (x >= (rowEnd[row] ?? -Infinity) + gap) {
+        rowEnd[row] = x + w;
+        out.push({ key: r.key, label: r.label, x, row });
+        break;
+      }
+    }
+  }
+  return out;
+}
