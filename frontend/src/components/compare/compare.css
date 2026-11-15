@@ -640,6 +640,11 @@
 @media (min-width: 640px) {
   .cmp-stage {
     flex: 1 1 auto;
-    min-height: 20rem;
+    min-height: 16rem;
+  }
+  /* The finding form can exceed short viewports: scroll the main column
+     instead of clipping its actions. */
+  .app-main:has(.cmp-stage) {
+    overflow-y: auto;
   }
 }
