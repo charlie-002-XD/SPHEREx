@@ -46,7 +46,7 @@ import { CompareView } from "./components/compare/CompareView";
 import { BandSelector } from "./components/compare/BandSelector";
 import { FindingsList } from "./components/compare/FindingsList";
 import type { PendingMark } from "./components/compare/EpochComparator";
-import { bandFrameCounts } from "./lib/bands";
+import { bandById, bandFrameCounts, selectEpochPair } from "./lib/bands";
 import {
   createLocalFindingsClient,
   type Finding,
@@ -438,6 +438,17 @@ export function App(props: AppProps) {
     frames[Math.min(Math.max(url.frame, 0), Math.max(frames.length - 1, 0))] ??
     null;
 
+  // In Compare the metadata card follows the marked epoch, else epoch A.
+  const compareFrame = useMemo(() => {
+    if (url.view !== "compare" || url.embed) return null;
+    const marked = frames.find((f) => f.meta.id === pending?.frameId);
+    if (marked !== undefined) return marked;
+    const band = bandById(url.band);
+    return band !== null ? (selectEpochPair(frames, band)?.a ?? null) : null;
+  }, [url.view, url.embed, url.band, frames, pending]);
+  const shownFrame =
+    url.view === "compare" && !url.embed ? compareFrame : currentFrame;
+
   // Overlay view position: the queried position when a response exists,
   // else the coordinates currently entered in the search bar.
   const q = framesResult.response?.query;
@@ -525,7 +536,7 @@ export function App(props: AppProps) {
           <GroupChevron />
         </summary>
         <FrameMetadata
-          frame={currentFrame?.meta ?? null}
+          frame={shownFrame?.meta ?? null}
           unit={framesResult.response?.unit}
           flagLegend={framesResult.response?.flag_legend}
         />
